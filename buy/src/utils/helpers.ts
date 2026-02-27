@@ -20,6 +20,11 @@ export function getBestETA(product: Product, zoneId: ZoneId) {
   const best = priority.find(p=>opts.includes(p)) ?? opts[0];
   return getETA(zoneId, best);
 }
-export function validateNepalPhone(phone: string) { return /^(97|98)d{8}$/.test(phone.replace(/[s-+]/g,'')); }
-export function normalizePhone(phone: string) { return phone.replace(/[s-+]/g,''); }
+export function validateNepalPhone(phone: string): boolean {
+  // Nepal mobile: starts with 97 or 98, followed by exactly 8 digits
+  return /^(97|98)\d{8}$/.test(phone.replace(/[\s\-+]/g, ''));
+}
+export function normalizePhone(phone: string): string {
+  return phone.replace(/[\s\-+]/g, '');
+}
 export function generateOrderId() { return 'BUY-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2,6).toUpperCase(); }

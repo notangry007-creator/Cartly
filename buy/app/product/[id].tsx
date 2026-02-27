@@ -10,6 +10,9 @@ import { useCartStore } from '../../src/stores/cartStore';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useZoneStore } from '../../src/stores/zoneStore';
 import { formatNPR, getDiscountPercent, getBestETA, getAvailableDeliveryOptions, getDeliveryFee, getETA, timeAgo } from '../../src/utils/helpers';
+import { useToast } from '../../src/context/ToastContext';
+import { useWishlistStore } from '../../src/stores/wishlistStore';
+import * as Haptics from 'expo-haptics';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 import { DeliveryOption } from '../../src/types';
 const { width: W } = Dimensions.get('window');
@@ -27,6 +30,11 @@ export default function ProductDetailScreen() {
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
   const [adding, setAdding] = useState(false);
+  const { showSuccess } = useToast();
+  const { isWishlisted, toggle: toggleWishlist } = useWishlistStore();
+  const wishlisted = isWishlisted(product?.id ?? '');
+  // Per-attribute selection state: { color: 'Black', size: 'M' }
+  const [attrSelection, setAttrSelection] = useState<Record<string, string>>({});
   if (isLoading) return <View style={[s.container,{paddingTop:insets.top,justifyContent:'center',alignItems:'center'}]}><ActivityIndicator size="large" color={theme.colors.primary}/></View>;
   if (!product) return <View style={[s.container,{paddingTop:insets.top}]}><Text style={{margin:20}}>Product not found</Text></View>;
   const variant = (product.variants.find(v=>v.id===(selVariantId||product.variants[0]?.id)))??product.variants[0];
@@ -37,8 +45,11 @@ export default function ProductDetailScreen() {
   const attrKeys = [...new Set(product.variants.flatMap(v=>Object.keys(v.attributes)))];
   async function addToCart() {
     if(!user){router.push('/(auth)/login');return;}
-    setAdding(true); await addItem(user.id,product.id,curVid,qty); setAdding(false);
-    Alert.alert('Added to Cart','',[ {text:'Continue Shopping'}, {text:'View Cart',onPress:()=>router.push('/(tabs)/cart')} ]);
+    setAdding(true);
+    await addItem(user.id, product.id, curVid, qty);
+    setAdding(false);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showSuccess(`${product.title.slice(0, 30)}... added to cart`);
   }
   async function buyNow() {
     if(!user){router.push('/(auth)/login');return;}
@@ -76,22 +87,44 @@ export default function ProductDetailScreen() {
             <View style={s.codRow}><Ionicons name={codAvail?'cash':'close-circle'} size={14} color={codAvail?'#2E7D32':'#B71C1C'}/><Text style={[s.codTxt,!codAvail&&{color:'#B71C1C'}]}>{codAvail?'Cash on Delivery available':'COD not available in your zone'}</Text></View>
           </View>
           <Divider/>
-          {attrKeys.length>0&&<View style={s.varSec}>
-            {attrKeys.map(key=>{
-              return (
-                <View key={key}>
-                  <Text variant="titleSmall" style={s.varKey}>{key.charAt(0).toUpperCase()+key.slice(1)}: <Text style={s.varSel}>{variant?.attributes[key]??''}</Text></Text>
-                  <View style={s.varRow}>
-                    {product.variants.map(v=>{const isSel=v.id===curVid;const oos=v.stock===0;return(
-                      <TouchableOpacity key={v.id} onPress={()=>!oos&&setSelVariantId(v.id)} style={[s.vChip,isSel&&s.vChipSel,oos&&s.vChipOOS]} disabled={oos}>
-                        <Text style={[s.vChipTxt,isSel&&s.vChipTxtSel,oos&&s.vChipTxtOOS]}>{v.attributes[key]}</Text>
-                      </TouchableOpacity>
-                    );})}
+          {attrKeys.length > 0 && (
+            <View style={s.varSec}>
+              {attrKeys.map(key => {
+                // Get unique values for this attribute key
+                const uniqueValues = [...new Set(product.variants.map(v => v.attributes[key]).filter(Boolean))];
+                const currentVal = attrSelection[key] ?? (selectedV?.attributes[key] ?? uniqueValues[0]);
+                return (
+                  <View key={key}>
+                    <Text variant="titleSmall" style={s.varKey}>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}:{' '}
+                      <Text style={s.varSel}>{currentVal}</Text>
+                    </Text>
+                    <View style={s.varRow}>
+                      {uniqueValues.map(val => {
+                        const isSelected = currentVal === val;
+                        // Check if selecting this value leaves any in-stock variant
+                        const hasStock = product.variants.some(
+                          v => v.attributes[key] === val && v.stock > 0
+                        );
+                        return (
+                          <TouchableOpacity
+                            key={val}
+                            onPress={() => selectAttribute(key, val)}
+                            style={[s.vChip, isSelected && s.vChipSel, !hasStock && s.vChipOOS]}
+                            disabled={!hasStock}
+                          >
+                            <Text style={[s.vChipTxt, isSelected && s.vChipTxtSel, !hasStock && s.vChipTxtOOS]}>
+                              {val}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   </View>
-                </View>
-              );
-            })}
-          </View>}
+                );
+              })}
+            </View>
+          )}
           <View style={s.qtyRow}><Text variant="titleSmall" style={s.secTitle}>Quantity</Text><View style={s.qtyCtrl}><TouchableOpacity style={s.qBtn} onPress={()=>setQty(Math.max(1,qty-1))}><Ionicons name="remove" size={18} color="#333"/></TouchableOpacity><Text variant="titleMedium" style={s.qVal}>{qty}</Text><TouchableOpacity style={s.qBtn} onPress={()=>{if(qty<(variant?.stock??1))setQty(qty+1);}} disabled={qty>=(variant?.stock??1)}><Ionicons name="add" size={18} color={qty>=(variant?.stock??1)?'#ccc':'#333'}/></TouchableOpacity></View><Text variant="labelSmall" style={s.stockTxt}>{variant?.stock??0} in stock</Text></View>
           <Divider/>
           {seller&&<Surface style={s.sellerCard} elevation={1}>

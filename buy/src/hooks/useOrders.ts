@@ -26,8 +26,13 @@ export const useCreateOrder = () => {
       const days = order.deliveryOption==='same_day'?0:order.deliveryOption==='next_day'?1:4;
       const no: Order = { ...order, id:uuid(), createdAt:new Date().toISOString(), expectedDelivery:addDaysToDate(new Date(),days).toISOString(), canReview:false, timeline:[{status:'pending',timestamp:new Date().toISOString(),note:'Order placed'}] };
       await setItem(ok(order.userId), [no,...existing]);
-      setTimeout(()=>progressOrder(order.userId,no.id,'confirmed','Confirmed by seller'),5000);
-      setTimeout(()=>progressOrder(order.userId,no.id,'packed','Packed and ready for pickup'),15000);
+      // Simulate order progression (dev/demo only; replace with webhooks in production)
+      const t1 = setTimeout(() => progressOrder(order.userId, no.id, 'confirmed', 'Confirmed by seller'), 8000);
+      const t2 = setTimeout(() => progressOrder(order.userId, no.id, 'packed', 'Packed and ready for shipment'), 20000);
+      // Register for potential cleanup (best-effort in non-component context)
+      if (typeof globalThis !== 'undefined') {
+        (globalThis as any).__buyOrderTimers = [...((globalThis as any).__buyOrderTimers ?? []), t1, t2];
+      }
       return no;
     },
     onSuccess: (_,v) => qc.invalidateQueries({ queryKey:['orders',v.userId] }),

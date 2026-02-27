@@ -54,7 +54,11 @@ export default function OrderDetailScreen() {
               </View>
             );})}
           </View>
-          {canSim&&<Button mode="text" compact onPress={()=>{const n=NEXT[order.status];if(n)updateStatus({userId:user!.id,orderId:order.id,status:n});}} textColor="#aaa" style={{marginTop:SPACING.sm}}>[Dev] Simulate Next Step</Button>}
+          {__DEV__ && canSim && (
+          <Button mode="text" compact onPress={() => { const n = NEXT[order.status]; if(n) updateStatus({ userId: user!.id, orderId: order.id, status: n }); }} textColor="#aaa" style={{ marginTop: SPACING.sm }}>
+            [Dev] Simulate Next Step
+          </Button>
+        )}
         </Surface>
 
         {/* ── LIVE DELIVERY MAP ── */}

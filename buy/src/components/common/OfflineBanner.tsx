@@ -15,13 +15,12 @@ export default function OfflineBanner() {
   const opacity = useSharedValue(0);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (!isOnline) {
-      // Slide in
       translateY.value = withSpring(0, { damping: 14, stiffness: 120 });
       opacity.value = withTiming(1, { duration: 250 });
     } else if (wasOffline) {
-      // Show "back online" briefly, then slide out
-      setTimeout(() => {
+      timer = setTimeout(() => {
         translateY.value = withTiming(-60, { duration: 350, easing: Easing.in(Easing.ease) });
         opacity.value = withTiming(0, { duration: 300 });
       }, 2000);
@@ -29,6 +28,7 @@ export default function OfflineBanner() {
       translateY.value = -60;
       opacity.value = 0;
     }
+    return () => { if (timer) clearTimeout(timer); };
   }, [isOnline, wasOffline]);
 
   const animStyle = useAnimatedStyle(() => ({

@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useAddresses, useDeleteAddress } from '../../src/hooks/useAddresses';
 import ScreenHeader from '../../src/components/common/ScreenHeader';
+import { useToast } from '../../src/context/ToastContext';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 export default function AddressesScreen() {
   const insets = useSafeAreaInsets();
@@ -14,6 +15,7 @@ export default function AddressesScreen() {
   const { user } = useAuthStore();
   const { data: addresses=[] } = useAddresses(user?.id??'');
   const { mutateAsync: deleteAddr } = useDeleteAddress();
+  const { showSuccess } = useToast();
   return (
     <View style={[s.container,{paddingTop:insets.top}]}>
       <ScreenHeader title="Saved Addresses"/>
@@ -23,8 +25,11 @@ export default function AddressesScreen() {
           <Surface style={s.card} elevation={1}>
             <View style={s.cardHeader}>
               <View style={s.labelRow}><Ionicons name="location" size={16} color={theme.colors.primary}/><Text variant="titleSmall" style={s.label}>{item.label}</Text>{item.isDefault&&<View style={s.defBadge}><Text style={s.defTxt}>Default</Text></View>}</View>
-              <TouchableOpacity onPress={()=>Alert.alert('Delete','Remove this address?',[{text:'Cancel'},{text:'Delete',style:'destructive',onPress:()=>user&&deleteAddr({userId:user.id,addressId:item.id})}])}>
-                <Ionicons name="trash-outline" size={18} color="#999"/>
+              <TouchableOpacity onPress={() => router.push(`/addresses/edit/${item.id}`)} style={{ marginRight: 8 }}>
+                <Ionicons name="pencil-outline" size={18} color={theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Alert.alert('Delete', 'Remove this address?', [{text:'Cancel'},{text:'Delete',style:'destructive',onPress:()=>user&&deleteAddr({userId:user.id,addressId:item.id})}])}>
+                <Ionicons name="trash-outline" size={18} color="#999" />
               </TouchableOpacity>
             </View>
             <Text variant="bodySmall" style={s.addr}>{item.landmark}, Ward {item.ward}, {item.municipality}, {item.district}, {item.province}</Text>

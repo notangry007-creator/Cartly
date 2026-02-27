@@ -18,3 +18,15 @@ export const DELIVERY_FEE_MAP: Record<string, Record<string, number>> = {
   major_city:{ standard:120 },
   rest_nepal:{ standard:200 },
 };
+
+/**
+ * Canonical shipping fee — used by BOTH cart and checkout.
+ * Weight-band pricing on top of zone base rate.
+ */
+export function calculateShippingFee(zoneId: string, deliveryOption: string, weightKg: number): number {
+  const baseFee = DELIVERY_FEE_MAP[zoneId]?.[deliveryOption];
+  if (baseFee === undefined) return 200; // fallback
+  // Weight surcharge: +10% per kg above 1kg
+  const weightSurcharge = Math.max(0, weightKg - 1) * baseFee * 0.1;
+  return Math.round(baseFee + weightSurcharge);
+}

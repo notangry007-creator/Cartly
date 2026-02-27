@@ -3,9 +3,10 @@
     "name": "Buy",
     "slug": "buy",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "scheme": "buy",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -27,7 +28,15 @@
         "backgroundColor": "#E53935"
       },
       "package": "com.buy.app",
-      "permissions": ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","CAMERA","READ_EXTERNAL_STORAGE","WRITE_EXTERNAL_STORAGE","VIBRATE"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -36,10 +45,38 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      ["expo-location", {"locationAlwaysAndWhenInUsePermission": "Allow Buy to use your location."}],
-      ["expo-notifications", {"icon": "./assets/icon.png","color": "#E53935"}],
-      ["expo-image-picker", {"photosPermission": "Allow Buy to access photos.","cameraPermission": "Allow Buy to use camera."}]
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#E53935",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Buy to use your location for accurate delivery estimates."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#E53935",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Buy to access your photos for return requests.",
+          "cameraPermission": "Allow Buy to take photos for return requests."
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

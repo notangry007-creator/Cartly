@@ -5,12 +5,14 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useCartStore } from '../../src/stores/cartStore';
 import { useZoneStore } from '../../src/stores/zoneStore';
+import { useToast } from '../../src/context/ToastContext';
 import { PRODUCTS, COUPONS } from '../../src/data/seed';
 import { formatNPR, getDiscountPercent } from '../../src/utils/helpers';
-import { getZone } from '../../src/data/zones';
+import { getZone, calculateShippingFee } from '../../src/data/zones';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 
 export default function CartScreen() {
@@ -23,6 +25,7 @@ export default function CartScreen() {
   const [appliedCoupon, setAppliedCoupon] = useState<typeof COUPONS[0]|null>(null);
   const [couponError, setCouponError] = useState('');
   const zone = getZone(zoneId);
+  const { showSuccess } = useToast();
 
   if (!user) return (
     <View style={[s.container,{paddingTop:insets.top}]}>
@@ -45,8 +48,8 @@ export default function CartScreen() {
   }).filter(r=>r.product&&r.variant);
 
   const subtotal = resolved.reduce((sum,{item,variant})=>sum+(variant?.price??0)*item.quantity,0);
-  const totalWeight = resolved.reduce((sum,{item,product})=>sum+(product?.weightKg??0.5)*item.quantity,0);
-  const shippingFee = Math.max(zone.shippingBase, Math.round(totalWeight*zone.shippingBase));
+  const totalWeightKg = resolved.reduce((sum,{item,product})=>sum+(product?.weightKg??0.5)*item.quantity,0);
+  const shippingFee = calculateShippingFee(zoneId, 'standard', totalWeightKg);
   let discount = 0;
   if(appliedCoupon) {
     discount = appliedCoupon.type==='percent' ? Math.min(Math.round(subtotal*appliedCoupon.value/100),appliedCoupon.maxDiscount??Infinity) : appliedCoupon.value;

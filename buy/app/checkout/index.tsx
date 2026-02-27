@@ -11,8 +11,10 @@ import { useAddresses } from '../../src/hooks/useAddresses';
 import { useCreateOrder } from '../../src/hooks/useOrders';
 import { useAddWalletTransaction } from '../../src/hooks/useWallet';
 import { useNotificationStore } from '../../src/stores/notificationStore';
+import * as Haptics from 'expo-haptics';
+import { useToast } from '../../src/context/ToastContext';
 import { PRODUCTS, COUPONS } from '../../src/data/seed';
-import { getZone, DELIVERY_FEE_MAP } from '../../src/data/zones';
+import { getZone, DELIVERY_FEE_MAP, calculateShippingFee } from '../../src/data/zones';
 import { formatNPR } from '../../src/utils/helpers';
 import { DeliveryOption, OrderItem, PaymentMethod } from '../../src/types';
 import { theme, SPACING, RADIUS } from '../../src/theme';
@@ -29,15 +31,17 @@ export default function CheckoutScreen() {
   const { mutateAsync: createOrder, isPending: creating } = useCreateOrder();
   const { mutateAsync: addTx } = useAddWalletTransaction();
   const { addNotification } = useNotificationStore();
+  const { showError } = useToast();
   const zone = getZone(zoneId);
   const [step, setStep] = useState(0);
   const [selAddrId, setSelAddrId] = useState('');
-  const [dOpt, setDOpt] = useState<DeliveryOption>('standard');
+  const [dOpt, setDOpt] = useState<DeliveryOption>((zone.deliveryOptions[0] ?? 'standard') as DeliveryOption);
   const [payMethod, setPayMethod] = useState<PaymentMethod>('cod');
   const appliedCoupon = pCoupon ? COUPONS.find(c=>c.code===pCoupon) : null;
   const resolved = items.map(item=>{const p=PRODUCTS.find(x=>x.id===item.productId);const v=p?.variants.find(x=>x.id===item.variantId);return{item,p,v};}).filter(r=>r.p&&r.v);
   const subtotal = resolved.reduce((s,{item,v})=>s+(v?.price??0)*item.quantity,0);
-  const shippingFee = DELIVERY_FEE_MAP[zoneId]?.[dOpt]??zone.shippingBase;
+  const totalWeightKg = resolved.reduce((s,{item,p})=>s+(p?.weightKg??0.5)*item.quantity, 0);
+  const shippingFee = calculateShippingFee(zoneId, dOpt, totalWeightKg);
   const codFee = payMethod==='cod'?zone.codFee:0;
   let discount = 0;
   if(appliedCoupon) discount=appliedCoupon.type==='percent'?Math.min(Math.round(subtotal*appliedCoupon.value/100),appliedCoupon.maxDiscount??Infinity):appliedCoupon.value;
@@ -58,8 +62,17 @@ export default function CheckoutScreen() {
       if(payMethod==='wallet'){await debitWallet(total);await addTx({userId:user.id,type:'debit',amount:total,description:'Order '+order.id,referenceId:order.id,balance:user.walletBalance-total});}
       await clearCart(user.id);
       await addNotification(user.id,{title:'Order Placed!',body:'Order #'+order.id.slice(-8).toUpperCase()+' placed. Total: '+formatNPR(total),type:'order',referenceId:order.id});
-      router.replace('/order/'+order.id);
-    } catch(e){Alert.alert('Error','Failed to place order. Try again.');}
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace({
+        pathname: '/order/confirmation',
+        params: {
+          orderId: order.id,
+          total: String(total),
+          expectedDelivery: order.expectedDelivery,
+          paymentMethod,
+        },
+      });
+    } catch(e){showError('Failed to place order. Please try again.');}
   }
   const dOpts = zone.deliveryOptions;
   const dLabels: Record<DeliveryOption,string> = {same_day:'⚡ Same Day',next_day:'🚲 Next Day',standard:'📦 Standard',pickup:'🏪 Pickup'};

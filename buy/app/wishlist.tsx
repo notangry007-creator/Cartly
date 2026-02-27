@@ -10,6 +10,8 @@ import { useWishlistStore } from '../src/stores/wishlistStore';
 import { useCartStore } from '../src/stores/cartStore';
 import { useAuthStore } from '../src/stores/authStore';
 import { useZoneStore } from '../src/stores/zoneStore';
+import * as Haptics from 'expo-haptics';
+import { useToast } from '../src/context/ToastContext';
 import { PRODUCTS } from '../src/data/seed';
 import { formatNPR, getDiscountPercent, getBestETA } from '../src/utils/helpers';
 import ScreenHeader from '../src/components/common/ScreenHeader';
@@ -22,6 +24,7 @@ export default function WishlistScreen() {
   const { zoneId } = useZoneStore();
   const { productIds, toggle } = useWishlistStore();
   const { addItem } = useCartStore();
+  const { showSuccess } = useToast();
 
   const wishlistProducts = PRODUCTS.filter(p => productIds.includes(p.id));
 
@@ -31,6 +34,8 @@ export default function WishlistScreen() {
     if (!product) return;
     await addItem(user.id, productId, product.variants[0].id, 1);
     await toggle(user.id, productId);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showSuccess('Moved to cart');
   }
 
   async function moveAllToCart() {
@@ -39,6 +44,7 @@ export default function WishlistScreen() {
       await addItem(user.id, product.id, product.variants[0].id, 1);
       await toggle(user.id, product.id);
     }
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.push('/(tabs)/cart');
   }
 

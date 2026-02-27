@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useNotificationStore } from '../../src/stores/notificationStore';
+import { useThemeStore } from '../../src/stores/themeStore';
 import { useWishlistStore } from '../../src/stores/wishlistStore';
 import { formatNPR } from '../../src/utils/helpers';
 import { theme, SPACING, RADIUS } from '../../src/theme';
@@ -26,6 +27,7 @@ export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const { unreadCount } = useNotificationStore();
   const { productIds: wishlistIds } = useWishlistStore();
+  const { isDark, toggle: toggleTheme } = useThemeStore();
   function handleLogout() {
     Alert.alert('Logout','Are you sure?',[{text:'Cancel'},{text:'Logout',style:'destructive',onPress:async()=>{ await logout(); router.replace('/(auth)/login'); }}]);
   }
@@ -73,6 +75,12 @@ export default function ProfileScreen() {
           <MI icon="help-circle-outline" label="Help & Support" subtitle="Call, chat, or WhatsApp" onPress={()=>router.push('/support')}/>
           <Divider/>
           <MI icon="shield-outline" label="Privacy & Security" onPress={()=>{}}/>
+          <Divider/>
+          <View style={ms.item}>
+            <View style={[ms.ic]}><Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={theme.colors.primary}/></View>
+            <View style={ms.lw}><Text variant="bodyMedium" style={ms.label}>Dark Mode</Text></View>
+            <Switch value={isDark} onValueChange={toggleTheme} color={theme.colors.primary}/>
+          </View>
         </Surface>
         <Surface style={s.menuSec} elevation={1}>
           <MI icon="log-out-outline" label="Logout" onPress={handleLogout} danger/>

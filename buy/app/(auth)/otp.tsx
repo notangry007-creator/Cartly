@@ -20,7 +20,7 @@ export default function OTPScreen() {
     if (countdown>0) { const t = setTimeout(()=>setCountdown(c=>c-1),1000); return ()=>clearTimeout(t); }
   }, [countdown]);
   function handleDigit(val:string, idx:number) {
-    const d = val.replace(/D/g,'').slice(-1);
+    const d = val.replace(/\D/g, '').slice(-1);
     const nd = [...digits]; nd[idx]=d; setDigits(nd); setError('');
     if (d&&idx<5) inputs.current[idx+1]?.focus();
   }
