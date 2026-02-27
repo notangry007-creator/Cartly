@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProductStore } from '@/src/stores/productStore';
 import ProductStatusBadge from '@/src/components/common/ProductStatusBadge';
 import EmptyState from '@/src/components/common/EmptyState';
+import { ProductCardSkeleton } from '@/src/components/common/SkeletonLoader';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
 import { formatNPR } from '@/src/utils/helpers';
 import { Product, ProductStatus } from '@/src/types';
@@ -23,7 +24,7 @@ const FILTER_TABS: { label: string; value: ProductStatus | 'all' }[] = [
 
 export default function ProductsScreen() {
   const router = useRouter();
-  const { products, deleteProduct } = useProductStore();
+  const { products, deleteProduct, isLoading } = useProductStore();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ProductStatus | 'all'>('all');
 
@@ -87,11 +88,16 @@ export default function ProductsScreen() {
       />
 
       {/* Product list */}
+      {isLoading ? (
+        <View style={styles.list}>
+          {[1, 2, 3, 4].map((i) => <ProductCardSkeleton key={i} />)}
+        </View>
+      ) : null}
       <FlatList
-        data={filtered}
+        data={isLoading ? [] : filtered}
         keyExtractor={(p) => p.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<EmptyState icon="cube-outline" title="No products found" description="Tap + to add your first product." />}
+        ListEmptyComponent={isLoading ? null : <EmptyState icon="cube-outline" title="No products found" description="Tap + to add your first product." />}
         renderItem={({ item: product }) => (
           <TouchableOpacity style={styles.card} onPress={() => router.push(`/product/${product.id}` as any)}>
             <Image source={{ uri: product.images[0] }} style={styles.image} contentFit="cover" />

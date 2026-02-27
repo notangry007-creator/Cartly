@@ -48,9 +48,25 @@ export default function AnalyticsScreen() {
     [products],
   );
 
-  // Use seed daily stats for the chart (real-time daily revenue would need a backend)
-  const shownStats = SEED_ANALYTICS.dailyStats.slice(-days);
-  const maxRevenue = Math.max(...shownStats.map((s) => s.revenue), 1);
+  // Build a daily revenue chart from real order data for the selected period
+  const shownStats = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: days }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (days - 1 - i));
+      const dateStr = d.toISOString().split('T')[0];
+      const revenue = orders
+        .filter((o) => o.status === 'delivered' && o.createdAt.startsWith(dateStr))
+        .reduce((sum, o) => sum + o.total, 0);
+      const orderCount = orders.filter((o) => o.createdAt.startsWith(dateStr)).length;
+      return { date: dateStr, revenue, orders: orderCount };
+    });
+  }, [orders, days]);
+
+  // Fall back to seed data for chart if all real values are 0 (demo mode)
+  const hasRealData = shownStats.some((s) => s.revenue > 0);
+  const chartStats = hasRealData ? shownStats : SEED_ANALYTICS.dailyStats.slice(-days);
+  const maxRevenue = Math.max(...chartStats.map((s) => s.revenue), 1);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -86,12 +102,12 @@ export default function AnalyticsScreen() {
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Revenue trend — Last {days} days</Text>
           <View style={styles.chart}>
-            {shownStats.map((stat, idx) => {
+            {chartStats.map((stat, idx) => {
               const barHeight = Math.max((stat.revenue / maxRevenue) * 100, 4);
               return (
                 <View key={stat.date} style={styles.bar}>
                   <View style={[styles.barFill, { height: barHeight }]} />
-                  {idx % 3 === 0 && (
+                  {idx % Math.ceil(days / 7) === 0 && (
                     <Text style={styles.barLabel}>{stat.date.slice(5)}</Text>
                   )}
                 </View>
@@ -157,6 +173,7 @@ const styles = StyleSheet.create({
   barFill: { width: '100%', backgroundColor: Colors.primary, borderRadius: 3, minHeight: 4 },
   barLabel: { fontSize: 8, color: Colors.grey500, marginTop: 2 },
   sectionTitle: { fontSize: FontSize.md, fontWeight: '700', color: Colors.text, marginBottom: Spacing.sm, marginTop: Spacing.sm },
+  emptyText: { fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'center', padding: Spacing.md },
   topProductCard: { backgroundColor: Colors.white, borderRadius: BorderRadius.md, flexDirection: 'row', alignItems: 'center', padding: Spacing.md, marginBottom: Spacing.sm, ...Shadow.sm, gap: Spacing.sm },
   rank: { fontSize: FontSize.lg, fontWeight: '800', color: Colors.primary, width: 28 },
   productImage: { width: 48, height: 48, borderRadius: BorderRadius.sm, backgroundColor: Colors.grey100 },

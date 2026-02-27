@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOrderStore } from '@/src/stores/orderStore';
 import OrderStatusBadge from '@/src/components/common/OrderStatusBadge';
 import EmptyState from '@/src/components/common/EmptyState';
+import { OrderCardSkeleton } from '@/src/components/common/SkeletonLoader';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
 import { formatNPR, formatDateTime } from '@/src/utils/helpers';
 import { OrderStatus } from '@/src/types';
@@ -22,7 +23,7 @@ const STATUS_TABS: { label: string; value: OrderStatus | 'all' }[] = [
 
 export default function OrdersScreen() {
   const router = useRouter();
-  const orders = useOrderStore((s) => s.orders);
+  const { orders, isLoading } = useOrderStore();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
 
@@ -71,11 +72,16 @@ export default function OrdersScreen() {
         )}
       />
 
+      {isLoading ? (
+        <View style={styles.list}>
+          {[1, 2, 3, 4].map((i) => <OrderCardSkeleton key={i} />)}
+        </View>
+      ) : null}
       <FlatList
-        data={filtered}
+        data={isLoading ? [] : filtered}
         keyExtractor={(o) => o.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<EmptyState icon="receipt-outline" title="No orders found" description="Orders from buyers will appear here." />}
+        ListEmptyComponent={isLoading ? null : <EmptyState icon="receipt-outline" title="No orders found" description="Orders from buyers will appear here." />}
         renderItem={({ item: order }) => (
           <TouchableOpacity style={styles.card} onPress={() => router.push(`/order/${order.id}` as any)}>
             <View style={styles.cardTop}>

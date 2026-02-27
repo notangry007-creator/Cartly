@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,13 @@ import OrderStatusBadge from '@/src/components/common/OrderStatusBadge';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
 import { formatNPR, formatDateTime } from '@/src/utils/helpers';
 import { SEED_ANALYTICS } from '@/src/data/seed';
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning,';
+  if (h < 17) return 'Good afternoon,';
+  return 'Good evening,';
+}
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -34,7 +41,7 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Good morning,</Text>
+          <Text style={styles.greeting}>{getGreeting()}</Text>
           <Text style={styles.shopName}>{seller?.shopName ?? 'Your Shop'}</Text>
         </View>
         <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.notifBtn}>

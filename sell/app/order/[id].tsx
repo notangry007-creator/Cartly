@@ -34,17 +34,20 @@ export default function OrderDetailScreen() {
   const nextStatus = NEXT_STATUS[order.status];
 
   function handleAdvanceStatus() {
-    if (!nextStatus) return;
+    if (!nextStatus || !order) return;
+    const orderId = order.id;
     Alert.alert('Update Status', `Mark this order as "${nextStatus}"?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Update', onPress: () => updateStatus(order.id, nextStatus) },
+      { text: 'Update', onPress: () => updateStatus(orderId, nextStatus) },
     ]);
   }
 
   function handleCancel() {
+    if (!order) return;
+    const orderId = order.id;
     Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
       { text: 'No', style: 'cancel' },
-      { text: 'Yes, Cancel', style: 'destructive', onPress: () => updateStatus(order.id, 'cancelled') },
+      { text: 'Yes, Cancel', style: 'destructive', onPress: () => updateStatus(orderId, 'cancelled') },
     ]);
   }
 

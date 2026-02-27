@@ -32,9 +32,9 @@ export default function ProfileScreen() {
     { icon: 'person-outline', label: 'Edit Profile', route: '/edit-profile' },
     { icon: 'notifications-outline', label: 'Notifications', route: '/notifications', badge: unreadCount },
     { icon: 'wallet-outline', label: 'Payouts', route: '/payouts' },
-    { icon: 'shield-checkmark-outline', label: 'Account Verification', onPress: () => {} },
-    { icon: 'help-circle-outline', label: 'Help & Support', onPress: () => {} },
-    { icon: 'document-text-outline', label: 'Terms & Privacy', onPress: () => {} },
+    { icon: 'shield-checkmark-outline', label: 'Account Verification', onPress: () => Alert.alert('Verification', 'Please contact support@cartly.app to complete seller verification.') },
+    { icon: 'help-circle-outline', label: 'Help & Support', route: '/support' },
+    { icon: 'document-text-outline', label: 'Terms & Privacy', route: '/privacy' },
   ];
 
   return (

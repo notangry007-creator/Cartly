@@ -69,9 +69,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   updateStock: async (id, stock) => {
+    const newStatus = (p: Product): ProductStatus => {
+      if (stock === 0) return 'out_of_stock';
+      if (p.status === 'out_of_stock') return 'active';
+      return p.status;
+    };
     const products = get().products.map((p) =>
       p.id === id
-        ? { ...p, stock, status: stock === 0 ? 'out_of_stock' : p.status === 'out_of_stock' ? 'active' : p.status, updatedAt: new Date().toISOString() }
+        ? { ...p, stock, status: newStatus(p), updatedAt: new Date().toISOString() }
         : p,
     );
     await setItem(STORAGE_KEY, products);

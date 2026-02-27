@@ -6,6 +6,7 @@ import { useAuthStore } from '@/src/stores/authStore';
 import { useProductStore } from '@/src/stores/productStore';
 import { useOrderStore } from '@/src/stores/orderStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
+import { usePayoutStore } from '@/src/stores/payoutStore';
 import { Colors } from '@/src/theme';
 
 export default function RootLayout() {
@@ -13,12 +14,14 @@ export default function RootLayout() {
   const hydrateProducts = useProductStore((s) => s.hydrate);
   const hydrateOrders = useOrderStore((s) => s.hydrate);
   const hydrateNotifications = useNotificationStore((s) => s.hydrate);
+  const hydratePayouts = usePayoutStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrate();
     hydrateProducts();
     hydrateOrders();
     hydrateNotifications();
+    hydratePayouts();
   }, []);
 
   return (
@@ -35,6 +38,8 @@ export default function RootLayout() {
         <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="payouts" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="support" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </GestureHandlerRootView>
   );
