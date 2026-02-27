@@ -11,7 +11,7 @@ export const STORAGE_KEYS = {
   USERS:'buy_users', ADDRESSES:'buy_addresses', CART:'buy_cart', ORDERS:'buy_orders',
   RETURN_REQUESTS:'buy_returns', WALLET_TXS:'buy_wallet', NOTIFICATIONS:'buy_notifs',
   RECENT_SEARCHES:'buy_searches', REVIEWS:'buy_reviews', ZONE:'buy_zone', FIRST_RUN:'buy_first_run',
-  WISHLIST:'buy_wishlist',
+  WISHLIST:'buy_wishlist', TOUR_SEEN:'buy_tour_seen',
 } as const;
 export async function getItem<T>(key: string): Promise<T|null> {
   try { const r = await AsyncStorage.getItem(key); return r ? JSON.parse(r) as T : null; } catch { return null; }

@@ -16,6 +16,7 @@ import { useNotificationStore } from '../src/stores/notificationStore';
 import { useWishlistStore } from '../src/stores/wishlistStore';
 import { useRecentlyViewedStore } from '../src/stores/recentlyViewedStore';
 import { useNetworkStore } from '../src/stores/networkStore';
+import { useTourStore } from '../src/stores/tourStore';
 import { getAuthToken, getSavedUserId } from '../src/utils/storage';
 import OfflineBanner from '../src/components/common/OfflineBanner';
 import ErrorBoundary from '../src/components/common/ErrorBoundary';
@@ -44,6 +45,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { loadProducts: loadRecentlyViewed } = useRecentlyViewedStore();
   const { loadTheme, currentTheme } = useThemeStore();
   const { init: initNetwork } = useNetworkStore();
+  const { loadTour } = useTourStore();
 
   useEffect(() => {
     const unsubNetwork = initNetwork();
@@ -53,8 +55,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function init() {
       try {
-        await loadTheme();
-        await loadZone();
+        await Promise.all([loadTheme(), loadZone(), loadTour()]);
         const token = await getAuthToken();
         if (token) {
           const userId = await getSavedUserId();
@@ -105,6 +106,7 @@ export default function RootLayout() {
                   <StatusBar style="auto" />
                   <Stack screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="index" />
+                    <Stack.Screen name="tour" options={{ animation: 'fade', gestureEnabled: false }} />
                     <Stack.Screen name="onboarding" />
                     <Stack.Screen name="(auth)" />
                     <Stack.Screen name="(tabs)" />
