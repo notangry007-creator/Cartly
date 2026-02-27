@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
 import { Text, Searchbar, Chip } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useProducts } from '../src/hooks/useProducts';
 import { useZoneStore } from '../src/stores/zoneStore';
 import { getItem, setItem, STORAGE_KEYS } from '../src/utils/storage';
@@ -30,6 +31,29 @@ export default function SearchScreen() {
   const [maxPrice, setMaxPrice] = useState<number|undefined>();
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [sortBy, setSortBy] = useState<Sort>((params.sort as Sort)??'relevance');
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+
+  async function openScanner() {
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
+      if (!result.granted) {
+        Alert.alert('Camera Permission', 'Camera access is needed to scan barcodes.');
+        return;
+      }
+    }
+    setScanned(false);
+    setShowScanner(true);
+  }
+
+  function handleBarcodeScan({ data }: { data: string }) {
+    if (scanned) return;
+    setScanned(true);
+    setShowScanner(false);
+    // Search by barcode data — could be a product SKU or EAN
+    doSearch(data);
+  }
   useEffect(()=>{ const t=setTimeout(()=>setDebQ(query),400); return ()=>clearTimeout(t); },[query]);
   useEffect(()=>{ getItem<string[]>(STORAGE_KEYS.RECENT_SEARCHES).then(r=>setRecent(r??[])); },[]);
 
@@ -60,6 +84,7 @@ export default function SearchScreen() {
       <View style={s.searchHeader}>
         <TouchableOpacity onPress={()=>router.back()} style={s.backBtn} accessibilityRole="button" accessibilityLabel="Go back"><Ionicons name="arrow-back" size={22} color="#333"/></TouchableOpacity>
         <Searchbar placeholder="Search products..." value={query} onChangeText={setQuery} onSubmitEditing={()=>doSearch(query)} style={s.searchBar} autoFocus onClearIconPress={()=>{setQuery('');setDebQ('');}}/>
+        <TouchableOpacity onPress={openScanner} style={s.filterBtn} accessibilityRole="button" accessibilityLabel="Scan barcode to search"><Ionicons name="barcode-outline" size={22} color="#333"/></TouchableOpacity>
         <TouchableOpacity onPress={()=>setShowFilters(!showFilters)} style={s.filterBtn} accessibilityRole="button" accessibilityLabel={showFilters ? 'Hide filters' : 'Show filters'} accessibilityState={{ expanded: showFilters }}><Ionicons name="options" size={22} color={showFilters?theme.colors.primary:'#333'}/></TouchableOpacity>
       </View>
       {showFilters&&(
@@ -100,6 +125,31 @@ export default function SearchScreen() {
           <FlatList data={products} keyExtractor={i=>i.id} numColumns={2} contentContainerStyle={s.grid} columnWrapperStyle={s.row} renderItem={({item})=><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/>}/>
         </>
       )}
+      {/* Barcode scanner modal */}
+      <Modal visible={showScanner} animationType="slide" onRequestClose={() => setShowScanner(false)}>
+        <View style={s.scannerContainer}>
+          <View style={s.scannerHeader}>
+            <TouchableOpacity onPress={() => setShowScanner(false)} style={s.scannerClose}>
+              <Ionicons name="close" size={28} color="#fff" />
+            </TouchableOpacity>
+            <Text style={s.scannerTitle}>Scan Barcode</Text>
+            <View style={{ width: 44 }} />
+          </View>
+          {showScanner && (
+            <CameraView
+              style={s.scanner}
+              facing="back"
+              onBarcodeScanned={handleBarcodeScan}
+              barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'qr', 'code128', 'code39', 'upc_a', 'upc_e'] }}
+            />
+          )}
+          <View style={s.scannerOverlay}>
+            <View style={s.scannerFrame} />
+            <Text style={s.scannerHint}>Point camera at a product barcode</Text>
+          </View>
+        </View>
+      </Modal>
+
       {/* Price filter modal */}
       {showPriceFilter && (
         <View style={s.priceModal}>
@@ -143,4 +193,12 @@ const s = StyleSheet.create({
   priceModalCard:{backgroundColor:'#fff',borderRadius:RADIUS.lg,padding:SPACING.xl,width:'85%',gap:SPACING.sm},
   priceOpt:{padding:SPACING.md,borderRadius:RADIUS.md,borderWidth:1.5,borderColor:'#e0e0e0'},
   priceOptSel:{borderColor:theme.colors.primary,backgroundColor:theme.colors.primaryContainer},
+  scannerContainer:{flex:1,backgroundColor:'#000'},
+  scannerHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:SPACING.md,paddingTop:60,paddingBottom:SPACING.md},
+  scannerClose:{width:44,height:44,justifyContent:'center',alignItems:'center'},
+  scannerTitle:{color:'#fff',fontSize:18,fontWeight:'700'},
+  scanner:{flex:1},
+  scannerOverlay:{position:'absolute',top:0,left:0,right:0,bottom:0,justifyContent:'center',alignItems:'center',pointerEvents:'none'},
+  scannerFrame:{width:240,height:240,borderWidth:3,borderColor:theme.colors.primary,borderRadius:RADIUS.lg,backgroundColor:'transparent'},
+  scannerHint:{color:'rgba(255,255,255,0.8)',marginTop:SPACING.lg,fontSize:14,textAlign:'center'},
 });
