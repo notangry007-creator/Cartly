@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useNotificationStore } from '../../src/stores/notificationStore';
+import { useWishlistStore } from '../../src/stores/wishlistStore';
 import { formatNPR } from '../../src/utils/helpers';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 function MI({ icon, label, subtitle, onPress, badge, danger }: { icon:string; label:string; subtitle?:string; onPress:()=>void; badge?:number; danger?:boolean }) {
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
   const { unreadCount } = useNotificationStore();
+  const { productIds: wishlistIds } = useWishlistStore();
   function handleLogout() {
     Alert.alert('Logout','Are you sure?',[{text:'Cancel'},{text:'Logout',style:'destructive',onPress:async()=>{ await logout(); router.replace('/(auth)/login'); }}]);
   }
@@ -56,6 +58,8 @@ export default function ProfileScreen() {
           <Text variant="labelSmall" style={s.secLabel}>SHOPPING</Text>
           <Divider/>
           <MI icon="receipt-outline" label="My Orders" onPress={()=>router.push('/(tabs)/orders')}/>
+          <Divider/>
+          <MI icon="heart-outline" label="Wishlist" onPress={()=>router.push('/wishlist')} badge={wishlistIds.length}/>
           <Divider/>
           <MI icon="refresh-outline" label="Returns & Refunds" onPress={()=>router.push('/returns')}/>
           <Divider/>

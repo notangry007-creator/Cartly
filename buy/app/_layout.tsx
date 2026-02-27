@@ -12,9 +12,21 @@ import { useAuthStore } from '../src/stores/authStore';
 import { useZoneStore } from '../src/stores/zoneStore';
 import { useCartStore } from '../src/stores/cartStore';
 import { useNotificationStore } from '../src/stores/notificationStore';
+import { useWishlistStore } from '../src/stores/wishlistStore';
+import { useNetworkStore } from '../src/stores/networkStore';
 import { getAuthToken, getSavedUserId } from '../src/utils/storage';
+import OfflineBanner from '../src/components/common/OfflineBanner';
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry:1, staleTime:30000 } } });
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30000,
+      // Use cached data when offline
+      gcTime: 1000 * 60 * 60, // 1 hour cache
+    },
+  },
+});
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -22,6 +34,12 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { loadZone } = useZoneStore();
   const { loadCart } = useCartStore();
   const { loadNotifications } = useNotificationStore();
+  const { loadWishlist } = useWishlistStore();
+  const { init: initNetwork } = useNetworkStore();
+  useEffect(() => {
+    const unsubNetwork = initNetwork();
+    return () => unsubNetwork();
+  }, []);
   useEffect(() => {
     async function init() {
       try {
@@ -29,7 +47,12 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
         const token = await getAuthToken();
         if (token) {
           const userId = await getSavedUserId();
-          if (userId) { await loadUser(userId); await loadCart(userId); await loadNotifications(userId); }
+          if (userId) {
+            await loadUser(userId);
+            await loadCart(userId);
+            await loadNotifications(userId);
+            await loadWishlist(userId);
+          }
         }
       } finally { setReady(true); }
     }
@@ -40,7 +63,12 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
       <ActivityIndicator size="large" color="#fff" />
     </View>
   );
-  return <>{children}</>;
+  return (
+    <View style={{ flex: 1 }}>
+      {children}
+      <OfflineBanner />
+    </View>
+  );
 }
 
 export default function RootLayout() {
@@ -71,6 +99,7 @@ export default function RootLayout() {
                 <Stack.Screen name="edit-profile" options={{ animation:'slide_from_right' }} />
                 <Stack.Screen name="returns" options={{ animation:'slide_from_right' }} />
                 <Stack.Screen name="support" options={{ animation:'slide_from_right' }} />
+                <Stack.Screen name="wishlist" options={{ animation:'slide_from_right' }} />
               </Stack>
             </AppInitializer>
           </PaperProvider>

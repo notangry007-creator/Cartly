@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, FlatList, Dimensions } from 'react-native';
 import { Text, Searchbar, Surface } from 'react-native-paper';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +9,10 @@ import { useZoneStore } from '../../src/stores/zoneStore';
 import { useProducts, useCategories } from '../../src/hooks/useProducts';
 import { ZONES } from '../../src/data/zones';
 import { BANNERS } from '../../src/data/seed';
+import { IMG } from '../../src/data/images';
 import ProductCard from '../../src/components/common/ProductCard';
+import CachedImage from '../../src/components/common/CachedImage';
+import { BannerSkeleton, ProductRowSkeleton } from '../../src/components/common/SkeletonLoader';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 import { ZoneId } from '../../src/types';
 const { width: W } = Dimensions.get('window');
@@ -31,10 +33,10 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
-  const { data: categories } = useCategories();
-  const { data: fastProducts } = useProducts({ zoneId, isFastDelivery:true, inStock:true });
-  const { data: verifiedProducts } = useProducts({ zoneId, isAuthenticated:true, inStock:true });
-  const { data: dealProducts } = useProducts({ sortBy:'price_asc', inStock:true });
+  const { data: categories, isLoading: loadingCats } = useCategories();
+  const { data: fastProducts, isLoading: loadingFast } = useProducts({ zoneId, isFastDelivery:true, inStock:true });
+  const { data: verifiedProducts, isLoading: loadingVerified } = useProducts({ zoneId, isAuthenticated:true, inStock:true });
+  const { data: dealProducts, isLoading: loadingDeals } = useProducts({ sortBy:'price_asc', inStock:true });
   const onRefresh = useCallback(async()=>{ setRefreshing(true); await qc.invalidateQueries(); setRefreshing(false); },[qc]);
   const curZone = ZONES.find(z=>z.id===zoneId);
   return (
@@ -51,34 +53,63 @@ export default function HomeScreen() {
         <Searchbar placeholder="Search products..." value="" style={s.searchBar} editable={false}/>
       </TouchableOpacity>
       <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]}/>}>
+        {/* ── Banners with CachedImage ── */}
         <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{marginTop:SPACING.sm}} onScroll={e=>setBannerIdx(Math.round(e.nativeEvent.contentOffset.x/(W-SPACING.lg*2)))} scrollEventThrottle={16}>
-          {BANNERS.map(b=>(
-            <TouchableOpacity key={b.id} activeOpacity={0.9} onPress={()=>{ if(b.targetType==='category'&&b.targetId) router.push('/category/'+b.targetId); else if(b.targetType==='search') router.push({pathname:'/search',params:{q:b.targetQuery}}); }}>
-              <View style={s.banner}>
-                <Image source={{uri:b.imageUrl}} style={s.bannerImg} contentFit="cover"/>
-                <View style={s.bannerOvl}><Text style={s.bannerTitle}>{b.title}</Text>{b.subtitle&&<Text style={s.bannerSub}>{b.subtitle}</Text>}</View>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {BANNERS.map((b, idx)=>{
+            const imgData = (IMG.banners as Record<string, {uri:string;blurhash:string}>)[b.id];
+            return (
+              <TouchableOpacity key={b.id} activeOpacity={0.9} onPress={()=>{ if(b.targetType==='category'&&b.targetId) router.push('/category/'+b.targetId); else if(b.targetType==='search') router.push({pathname:'/search',params:{q:b.targetQuery}}); }}>
+                <View style={s.banner}>
+                  <CachedImage uri={imgData?.uri ?? b.imageUrl} blurhash={imgData?.blurhash} style={s.bannerImg}/>
+                  <View style={s.bannerOvl}><Text style={s.bannerTitle}>{b.title}</Text>{b.subtitle&&<Text style={s.bannerSub}>{b.subtitle}</Text>}</View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
         <View style={s.dots}>{BANNERS.map((_,i)=><View key={i} style={[s.dot,i===bannerIdx&&s.dotA]}/>)}</View>
+
+        {/* ── Categories with CachedImage ── */}
         <SectionHeader title="Categories" onSeeAll={()=>router.push('/(tabs)/categories')}/>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
-          {(categories??[]).map(cat=>(
-            <TouchableOpacity key={cat.id} style={s.catItem} onPress={()=>router.push('/category/'+cat.id)}>
-              <Surface style={s.catImgWrap} elevation={1}><Image source={{uri:cat.imageUrl}} style={s.catImg} contentFit="cover"/></Surface>
-              <Text variant="labelSmall" style={s.catLabel} numberOfLines={1}>{cat.name}</Text>
-            </TouchableOpacity>
-          ))}
+          {loadingCats
+            ? Array.from({length:5}).map((_,i)=><View key={i} style={s.catItem}><View style={[s.catImgWrap,{width:56,height:56,borderRadius:28,backgroundColor:'#e0e0e0'}]}/></View>)
+            : (categories??[]).map(cat=>{
+              const imgData = (IMG.categories as Record<string, {uri:string;blurhash:string}>)[cat.id];
+              return (
+                <TouchableOpacity key={cat.id} style={s.catItem} onPress={()=>router.push('/category/'+cat.id)}>
+                  <Surface style={s.catImgWrap} elevation={1}>
+                    <CachedImage uri={imgData?.uri ?? cat.imageUrl} blurhash={imgData?.blurhash} style={s.catImg}/>
+                  </Surface>
+                  <Text variant="labelSmall" style={s.catLabel} numberOfLines={1}>{cat.name}</Text>
+                </TouchableOpacity>
+              );
+            })
+          }
         </ScrollView>
+
+        {/* ── Fast Delivery with skeleton ── */}
         {(zoneId==='ktm_core'||zoneId==='ktm_outer')&&<>
           <SectionHeader title="⚡ Fast Delivery" onSeeAll={()=>router.push({pathname:'/search',params:{fastDelivery:'1'}})}/>
-          <FlatList data={(fastProducts??[]).slice(0,6)} horizontal showsHorizontalScrollIndicator={false} keyExtractor={i=>i.id} contentContainerStyle={s.pRow} renderItem={({item})=><View style={{width:160}}><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/></View>}/>
+          {loadingFast
+            ? <ProductRowSkeleton count={3}/>
+            : <FlatList data={(fastProducts??[]).slice(0,6)} horizontal showsHorizontalScrollIndicator={false} keyExtractor={i=>i.id} contentContainerStyle={s.pRow} renderItem={({item})=><View style={{width:160}}><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/></View>}/>
+          }
         </>}
+
+        {/* ── Verified Sellers with skeleton ── */}
         <SectionHeader title="✅ Verified Sellers" onSeeAll={()=>router.push({pathname:'/search',params:{verified:'1'}})}/>
-        <FlatList data={(verifiedProducts??[]).slice(0,6)} horizontal showsHorizontalScrollIndicator={false} keyExtractor={i=>i.id} contentContainerStyle={s.pRow} renderItem={({item})=><View style={{width:160}}><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/></View>}/>
+        {loadingVerified
+          ? <ProductRowSkeleton count={3}/>
+          : <FlatList data={(verifiedProducts??[]).slice(0,6)} horizontal showsHorizontalScrollIndicator={false} keyExtractor={i=>i.id} contentContainerStyle={s.pRow} renderItem={({item})=><View style={{width:160}}><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/></View>}/>
+        }
+
+        {/* ── Top Deals with skeleton ── */}
         <SectionHeader title="🔥 Top Deals" onSeeAll={()=>router.push({pathname:'/search',params:{sort:'price_asc'}})}/>
-        <FlatList data={(dealProducts??[]).slice(0,6)} horizontal showsHorizontalScrollIndicator={false} keyExtractor={i=>i.id} contentContainerStyle={s.pRow} renderItem={({item})=><View style={{width:160}}><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/></View>}/>
+        {loadingDeals
+          ? <ProductRowSkeleton count={3}/>
+          : <FlatList data={(dealProducts??[]).slice(0,6)} horizontal showsHorizontalScrollIndicator={false} keyExtractor={i=>i.id} contentContainerStyle={s.pRow} renderItem={({item})=><View style={{width:160}}><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/></View>}/>
+        }
         <View style={{height:SPACING.xl}}/>
       </ScrollView>
       {showZonePicker&&(

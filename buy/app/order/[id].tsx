@@ -10,6 +10,7 @@ import { useOrder, useCancelOrder, useUpdateOrderStatus } from '../../src/hooks/
 import { formatDate, formatDateTime, formatNPR } from '../../src/utils/helpers';
 import { OrderStatus } from '../../src/types';
 import ScreenHeader from '../../src/components/common/ScreenHeader';
+import DeliveryTrackingMap from '../../src/components/common/DeliveryTrackingMap';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 const SL: Record<OrderStatus,string> = { pending:'Order Placed', confirmed:'Confirmed', packed:'Packed', shipped:'Shipped', out_for_delivery:'Out for Delivery', delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return Requested', return_approved:'Return Approved', return_picked:'Picked Up', refunded:'Refunded' };
 const SI: Record<OrderStatus,string> = { pending:'hourglass', confirmed:'checkmark-circle', packed:'cube', shipped:'car', out_for_delivery:'bicycle', delivered:'checkmark-done-circle', cancelled:'close-circle', return_requested:'return-up-back', return_approved:'checkmark-circle', return_picked:'cube-outline', refunded:'wallet' };
@@ -55,6 +56,10 @@ export default function OrderDetailScreen() {
           </View>
           {canSim&&<Button mode="text" compact onPress={()=>{const n=NEXT[order.status];if(n)updateStatus({userId:user!.id,orderId:order.id,status:n});}} textColor="#aaa" style={{marginTop:SPACING.sm}}>[Dev] Simulate Next Step</Button>}
         </Surface>
+
+        {/* ── LIVE DELIVERY MAP ── */}
+        <DeliveryTrackingMap order={order} />
+
         <Surface style={s.section} elevation={1}>
           <Text variant="titleSmall" style={s.secTitle}>Items</Text>
           {order.items.map(item=>(

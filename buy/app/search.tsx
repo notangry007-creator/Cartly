@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
-import { Text, Searchbar, Chip, ActivityIndicator } from 'react-native-paper';
+import { Text, Searchbar, Chip } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useProducts } from '../src/hooks/useProducts';
 import { useZoneStore } from '../src/stores/zoneStore';
 import { getItem, setItem, STORAGE_KEYS } from '../src/utils/storage';
 import ProductCard from '../src/components/common/ProductCard';
+import { ProductGridSkeleton } from '../src/components/common/SkeletonLoader';
 import { theme, SPACING, RADIUS } from '../src/theme';
 type Sort = 'relevance'|'price_asc'|'price_desc'|'rating'|'fastest';
 export default function SearchScreen() {
@@ -62,7 +63,7 @@ export default function SearchScreen() {
           {['Samsung phone','Sony headphones','Organic honey','iPhone 15','Yoga mat'].map(p=><TouchableOpacity key={p} style={s.sugItem} onPress={()=>doSearch(p)}><Ionicons name="trending-up" size={16} color={theme.colors.primary}/><Text variant="bodyMedium" style={s.sugTxt}>{p}</Text></TouchableOpacity>)}
         </ScrollView>
       ):isLoading?(
-        <View style={s.loading}><ActivityIndicator size="large" color={theme.colors.primary}/></View>
+        <ProductGridSkeleton count={6}/>
       ):products.length===0?(
         <View style={s.empty}><Ionicons name="search-outline" size={64} color="#ccc"/><Text variant="titleMedium" style={s.emptyTxt}>No results for "{debQ}"</Text></View>
       ):(
