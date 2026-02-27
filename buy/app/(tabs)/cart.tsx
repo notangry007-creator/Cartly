@@ -9,17 +9,17 @@ import * as Haptics from 'expo-haptics';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useLocalSearchParams } from 'expo-router';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useCartStore } from '../../src/stores/cartStore';
-import { useZoneStore } from '../../src/stores/zoneStore';
-import { useToast } from '../../src/context/ToastContext';
-import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
-import { useWishlistStore } from '../../src/stores/wishlistStore';
-import { PRODUCTS, COUPONS } from '../../src/data/seed';
-import { formatNPR, getDiscountPercent, getBestETA } from '../../src/utils/helpers';
-import { getZone, calculateShippingFee } from '../../src/data/zones';
-import { CartItemSkeleton } from '../../src/components/common/SkeletonLoader';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { useToast } from '@/src/context/ToastContext';
+import { useRecentlyViewedStore } from '@/src/stores/recentlyViewedStore';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { PRODUCTS, COUPONS } from '@/src/data/seed';
+import { formatNPR, getDiscountPercent, getBestETA } from '@/src/utils/helpers';
+import { getZone, calculateShippingFee } from '@/src/data/zones';
+import { CartItemSkeleton } from '@/src/components/common/SkeletonLoader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 export default function CartScreen() {
   const router = useRouter();

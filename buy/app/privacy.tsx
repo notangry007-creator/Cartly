@@ -4,9 +4,9 @@ import { Text, Surface, Divider, Switch, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuthStore } from '../src/stores/authStore';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 import { useRouter } from 'expo-router';
 
 interface PrivacySetting {

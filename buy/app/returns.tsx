@@ -3,13 +3,13 @@ import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 're
 import { Text, Surface, Chip, ActivityIndicator } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../src/stores/authStore';
-import { useReturns } from '../src/hooks/useOrders';
-import { formatDate } from '../src/utils/helpers';
-import { useAuthGuard } from '../src/hooks/useAuthGuard';
-import ScreenHeader from '../src/components/common/ScreenHeader';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useReturns } from '@/src/hooks/useOrders';
+import { formatDate } from '@/src/utils/helpers';
+import { useAuthGuard } from '@/src/hooks/useAuthGuard';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
 import { useRouter } from 'expo-router';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#FF8F00', approved: '#2E7D32', rejected: '#B71C1C', picked: '#00838F', refunded: '#37474F',

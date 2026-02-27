@@ -4,12 +4,12 @@ import { Text, Surface, ActivityIndicator, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useWalletTransactions } from '../../src/hooks/useWallet';
-import { formatNPR, formatDateTime } from '../../src/utils/helpers';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { useAuthGuard } from '../../src/hooks/useAuthGuard';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useWalletTransactions } from '@/src/hooks/useWallet';
+import { formatNPR, formatDateTime } from '@/src/utils/helpers';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { useAuthGuard } from '@/src/hooks/useAuthGuard';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 export default function WalletScreen() {

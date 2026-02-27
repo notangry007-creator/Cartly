@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
-import { useAuthStore } from '../src/stores/authStore';
-import { useZoneStore } from '../src/stores/zoneStore';
-import { useTourStore } from '../src/stores/tourStore';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { useTourStore } from '@/src/stores/tourStore';
 
 export default function Index() {
   const { isAuthenticated } = useAuthStore();

@@ -8,11 +8,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useAuthStore } from '../src/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 import { useRouter } from 'expo-router';
-import { useToast } from '../src/context/ToastContext';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { SPACING, RADIUS, theme } from '../src/theme';
+import { useToast } from '@/src/context/ToastContext';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { SPACING, RADIUS, theme } from '@/src/theme';
 
 const schema = z.object({
   name: z.string().min(2, 'Name required'),

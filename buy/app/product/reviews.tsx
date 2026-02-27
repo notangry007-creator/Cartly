@@ -4,10 +4,10 @@ import { Text, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useReviews } from '../../src/hooks/useProducts';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { timeAgo } from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useReviews } from '@/src/hooks/useProducts';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { timeAgo } from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 export default function ReviewsScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{id:string}>();

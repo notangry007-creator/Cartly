@@ -4,12 +4,12 @@ import { Text, Surface, Button, ActivityIndicator } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../src/stores/authStore';
-import { useNotificationStore } from '../src/stores/notificationStore';
-import { timeAgo } from '../src/utils/helpers';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../src/theme';
-import { useAuthGuard } from '../src/hooks/useAuthGuard';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
+import { timeAgo } from '@/src/utils/helpers';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+import { useAuthGuard } from '@/src/hooks/useAuthGuard';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const ICONS: Record<string, string> = { order:'receipt', wallet:'wallet', return:'return-up-back', promo:'pricetag', system:'notifications' };

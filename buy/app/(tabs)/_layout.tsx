@@ -6,9 +6,9 @@ import Animated, {
   withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { useEffect, useRef } from 'react';
-import { useCartStore } from '../../src/stores/cartStore';
-import { useNotificationStore } from '../../src/stores/notificationStore';
-import { theme } from '../../src/theme';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
+import { theme } from '@/src/theme';
 
 function Badge({ name, focused, count }: { name: string; focused: boolean; count?: number }) {
   const prevCount = useRef(count ?? 0);

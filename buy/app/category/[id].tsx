@@ -3,12 +3,12 @@ import { View, StyleSheet, FlatList, ScrollView, TouchableOpacity } from 'react-
 import { Text, Chip, ActivityIndicator } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCategories, useProducts } from '../../src/hooks/useProducts';
-import { useZoneStore } from '../../src/stores/zoneStore';
-import { CATEGORIES } from '../../src/data/seed';
-import ProductCard from '../../src/components/common/ProductCard';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { theme, SPACING } from '../../src/theme';
+import { useCategories, useProducts } from '@/src/hooks/useProducts';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { CATEGORIES } from '@/src/data/seed';
+import ProductCard from '@/src/components/common/ProductCard';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING } from '@/src/theme';
 export default function CategoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();

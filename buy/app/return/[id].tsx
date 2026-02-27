@@ -4,11 +4,11 @@ import { Text, Surface, Chip, ActivityIndicator } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useReturns } from '../../src/hooks/useOrders';
-import { formatDate } from '../../src/utils/helpers';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useReturns } from '@/src/hooks/useOrders';
+import { formatDate } from '@/src/utils/helpers';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 const STATUS_STEPS = ['pending','approved','picked','refunded'] as const;
 const STATUS_LABELS: Record<string, string> = {

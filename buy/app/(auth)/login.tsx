@@ -7,9 +7,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
-import { generateOTP } from '../../src/utils/otp';
-import { validateNepalPhone } from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { generateOTP } from '@/src/utils/otp';
+import { validateNepalPhone } from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 const schema = z.object({ phone: z.string().refine(validateNepalPhone, { message:'Enter a valid Nepal mobile number (97/98XXXXXXXX)' }) });
 type F = z.infer<typeof schema>;
 export default function LoginScreen() {

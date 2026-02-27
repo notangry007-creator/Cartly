@@ -14,19 +14,19 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PinchGestureHandler, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
-import { useProduct, useSeller, useReviews } from '../../src/hooks/useProducts';
-import { useCartStore } from '../../src/stores/cartStore';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useZoneStore } from '../../src/stores/zoneStore';
-import { useWishlistStore } from '../../src/stores/wishlistStore';
-import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
-import { useToast } from '../../src/context/ToastContext';
+import { useProduct, useSeller, useReviews } from '@/src/hooks/useProducts';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { useRecentlyViewedStore } from '@/src/stores/recentlyViewedStore';
+import { useToast } from '@/src/context/ToastContext';
 import {
   formatNPR, getDiscountPercent, getBestETA,
   getAvailableDeliveryOptions, getDeliveryFee, getETA, timeAgo,
-} from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
-import { IMG } from '../../src/data/images';
+} from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+import { IMG } from '@/src/data/images';
 
 const { width: W } = Dimensions.get('window');
 

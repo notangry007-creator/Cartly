@@ -9,8 +9,8 @@ import Animated, {
   withDelay, withSpring, withSequence, withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { formatNPR, formatDate } from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { formatNPR, formatDate } from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 export default function OrderConfirmationScreen() {
   const router = useRouter();

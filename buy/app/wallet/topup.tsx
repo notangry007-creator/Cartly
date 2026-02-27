@@ -5,12 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useAddWalletTransaction } from '../../src/hooks/useWallet';
-import { useToast } from '../../src/context/ToastContext';
-import { formatNPR } from '../../src/utils/helpers';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useAddWalletTransaction } from '@/src/hooks/useWallet';
+import { useToast } from '@/src/context/ToastContext';
+import { formatNPR } from '@/src/utils/helpers';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 const QUICK_AMOUNTS = [200, 500, 1000, 2000, 5000];
 

@@ -3,8 +3,8 @@ import { View, StyleSheet, TouchableOpacity, Linking, ScrollView } from 'react-n
 import { Text, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 const FAQ_ITEMS = [
   { q: 'How do I track my order?', a: 'Go to Orders tab and tap on your order to see the real-time tracking timeline.' },

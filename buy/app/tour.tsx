@@ -11,8 +11,8 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
   withTiming, interpolate, Extrapolation,
 } from 'react-native-reanimated';
-import { setItem, STORAGE_KEYS } from '../src/utils/storage';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import { setItem, STORAGE_KEYS } from '@/src/utils/storage';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 const { width: W, height: H } = Dimensions.get('window');
 

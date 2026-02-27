@@ -6,12 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuthStore } from '../../../src/stores/authStore';
-import { useAddresses, useUpdateAddress } from '../../../src/hooks/useAddresses';
-import ScreenHeader from '../../../src/components/common/ScreenHeader';
-import MapPinPicker from '../../../src/components/common/MapPinPicker';
-import { useToast } from '../../../src/context/ToastContext';
-import { SPACING, RADIUS, theme } from '../../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useAddresses, useUpdateAddress } from '@/src/hooks/useAddresses';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import MapPinPicker from '@/src/components/common/MapPinPicker';
+import { useToast } from '@/src/context/ToastContext';
+import { SPACING, RADIUS, theme } from '@/src/theme';
 
 const schema = z.object({
   label: z.string().min(1, 'Required'),

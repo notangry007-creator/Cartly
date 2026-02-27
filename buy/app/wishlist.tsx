@@ -6,16 +6,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring, FadeInDown, FadeOutLeft } from 'react-native-reanimated';
-import { useWishlistStore } from '../src/stores/wishlistStore';
-import { useCartStore } from '../src/stores/cartStore';
-import { useAuthStore } from '../src/stores/authStore';
-import { useZoneStore } from '../src/stores/zoneStore';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
 import * as Haptics from 'expo-haptics';
-import { useToast } from '../src/context/ToastContext';
-import { PRODUCTS } from '../src/data/seed';
-import { formatNPR, getDiscountPercent, getBestETA } from '../src/utils/helpers';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import { useToast } from '@/src/context/ToastContext';
+import { PRODUCTS } from '@/src/data/seed';
+import { formatNPR, getDiscountPercent, getBestETA } from '@/src/utils/helpers';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 export default function WishlistScreen() {
   const router = useRouter();

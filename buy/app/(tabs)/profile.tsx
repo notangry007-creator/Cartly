@@ -4,12 +4,12 @@ import { Text, Surface, Divider, Button, Avatar } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useNotificationStore } from '../../src/stores/notificationStore';
-import { useThemeStore } from '../../src/stores/themeStore';
-import { useWishlistStore } from '../../src/stores/wishlistStore';
-import { formatNPR } from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
+import { useThemeStore } from '@/src/stores/themeStore';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { formatNPR } from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 function MI({ icon, label, subtitle, onPress, badge, danger }: { icon:string; label:string; subtitle?:string; onPress:()=>void; badge?:number; danger?:boolean }) {
   return (
     <TouchableOpacity style={ms.item} onPress={onPress} activeOpacity={0.7}>
