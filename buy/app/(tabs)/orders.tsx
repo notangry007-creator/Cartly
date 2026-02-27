@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { SkeletonBox } from '../../src/components/common/SkeletonLoader';
+import { SkeletonBox, OrderCardSkeleton } from '../../src/components/common/SkeletonLoader';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useOrders } from '../../src/hooks/useOrders';
 import { Order, OrderStatus } from '../../src/types';
@@ -42,6 +42,7 @@ export default function OrdersScreen() {
           <Chip key={f} selected={filter===f} onPress={()=>setFilter(f)} style={[s.chip,filter===f&&s.chipA]} textStyle={filter===f?s.chipTxtA:s.chipTxt} compact accessibilityRole="button" accessibilityLabel={`Filter by ${f}`} accessibilityState={{selected: filter===f}}>{f.charAt(0).toUpperCase()+f.slice(1)}</Chip>
         ))}
       </View>
+      {isFirstLoad && <View style={{padding:SPACING.md}}>{[1,2,3].map(i=><OrderCardSkeleton key={i}/>)}</View>}
       <FlatList data={filtered} keyExtractor={i=>i.id} contentContainerStyle={s.list} refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[theme.colors.primary]}/>}
         getItemLayout={(_data, index) => ({ length: 136, offset: 136 * index + SPACING.md, index })}
         ListEmptyComponent={<View style={s.empty}><Ionicons name="receipt-outline" size={64} color="#ccc"/><Text variant="titleMedium" style={s.emptyTitle}>No orders yet</Text><Button mode="contained" onPress={()=>router.push('/(tabs)/home')}>Start Shopping</Button></View>}

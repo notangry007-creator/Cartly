@@ -89,6 +89,42 @@ export function BannerSkeleton() {
   return <SkeletonBox width="100%" height={160} borderRadius={RADIUS.lg} style={{ marginHorizontal: 16 }} />;
 }
 
+// Cart item skeleton
+export function CartItemSkeleton() {
+  return (
+    <View style={s.cartItem}>
+      <SkeletonBox width={80} height={80} borderRadius={RADIUS.sm} />
+      <View style={{ flex: 1, gap: 6 }}>
+        <SkeletonBox width="85%" height={12} />
+        <SkeletonBox width="50%" height={11} />
+        <SkeletonBox width="40%" height={16} />
+        <SkeletonBox width={90} height={28} borderRadius={RADIUS.sm} />
+      </View>
+    </View>
+  );
+}
+
+// Order card skeleton
+export function OrderCardSkeleton() {
+  return (
+    <View style={s.orderCard}>
+      <View style={s.orderCardRow}>
+        <SkeletonBox width={100} height={12} />
+        <SkeletonBox width={70} height={22} borderRadius={RADIUS.full} />
+      </View>
+      <View style={s.orderCardBody}>
+        <SkeletonBox width={60} height={60} borderRadius={RADIUS.sm} />
+        <View style={{ flex: 1, gap: 6 }}>
+          <SkeletonBox width="80%" height={12} />
+          <SkeletonBox width="50%" height={11} />
+          <SkeletonBox width="35%" height={11} />
+        </View>
+        <SkeletonBox width={60} height={18} />
+      </View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   box: { backgroundColor: '#E0E0E0' },
   cardWrap: { borderRadius: RADIUS.md, overflow: 'hidden', backgroundColor: '#fff', margin: 4 },
@@ -97,4 +133,8 @@ const s = StyleSheet.create({
   gridItem: { width: '50%', padding: 4 },
   row: { flexDirection: 'row', paddingHorizontal: 16, gap: 8 },
   rowItem: { width: 160, backgroundColor: '#fff', borderRadius: RADIUS.md, overflow: 'hidden' },
+  cartItem: { flexDirection: 'row', gap: 12, backgroundColor: '#fff', borderRadius: RADIUS.md, padding: 12, marginBottom: 8 },
+  orderCard: { backgroundColor: '#fff', borderRadius: RADIUS.md, padding: 14, marginBottom: 8, gap: 10 },
+  orderCardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  orderCardBody: { flexDirection: 'row', gap: 10, alignItems: 'center' },
 });

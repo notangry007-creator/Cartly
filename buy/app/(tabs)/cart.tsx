@@ -18,6 +18,7 @@ import { useWishlistStore } from '../../src/stores/wishlistStore';
 import { PRODUCTS, COUPONS } from '../../src/data/seed';
 import { formatNPR, getDiscountPercent, getBestETA } from '../../src/utils/helpers';
 import { getZone, calculateShippingFee } from '../../src/data/zones';
+import { CartItemSkeleton } from '../../src/components/common/SkeletonLoader';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 
 export default function CartScreen() {
@@ -25,7 +26,7 @@ export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const { applyCoupon: prefilledCoupon } = useLocalSearchParams<{ applyCoupon?: string }>();
   const { user } = useAuthStore();
-  const { items, updateQuantity, removeItem } = useCartStore();
+  const { items, updateQuantity, removeItem, isLoaded } = useCartStore();
   const { zoneId } = useZoneStore();
   const [couponCode, setCouponCode] = useState(prefilledCoupon ?? '');
   const [appliedCoupon, setAppliedCoupon] = useState<typeof COUPONS[0]|null>(null);
@@ -53,8 +54,18 @@ export default function CartScreen() {
     </View>
   );
 
+  // Show skeleton while cart is loading from AsyncStorage
+  if (!isLoaded) return (
+    <View style={[s.container,{paddingTop:insets.top}]}>
+      <View style={s.header}><Text variant="headlineSmall" style={s.headerTitle}>Cart</Text></View>
+      <View style={{padding:SPACING.md}}>
+        {[1,2,3].map(i=><CartItemSkeleton key={i}/>)}
+      </View>
+    </View>
+  );
+
   if (!items.length) return <EmptyCartScreen />;
-  
+
 
   const resolved = items.map(item=>{
     const product = PRODUCTS.find(p=>p.id===item.productId);

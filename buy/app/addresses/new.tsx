@@ -120,14 +120,14 @@ export default function NewAddressScreen() {
               <Text variant="bodyMedium" style={s.switchLabel}>Set as Default</Text>
               <Text variant="labelSmall" style={s.switchSub}>Use this address by default</Text>
             </View>
-            <Switch value={isDefault} onValueChange={setIsDefault} color={theme.colors.primary} />
+            <Switch value={isDefault} onValueChange={setIsDefault} thumbColor={isDefault ? theme.colors.primary : "#f4f3f4"} trackColor={{ false: "#e0e0e0", true: theme.colors.primaryContainer }} />
           </View>
           <View style={s.switchRow}>
             <View>
               <Text variant="bodyMedium" style={s.switchLabel}>Pickup Point Fallback</Text>
               <Text variant="labelSmall" style={s.switchSub}>Enable if delivery is weak in this area</Text>
             </View>
-            <Switch value={isPickup} onValueChange={setIsPickup} color={theme.colors.primary} />
+            <Switch value={isPickup} onValueChange={setIsPickup} thumbColor={isPickup ? theme.colors.primary : "#f4f3f4"} trackColor={{ false: "#e0e0e0", true: theme.colors.primaryContainer }} />
           </View>
 
           <Button

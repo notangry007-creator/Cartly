@@ -123,11 +123,11 @@ export default function EditAddressScreen() {
 
           <View style={s.switchRow}>
             <View><Text variant="bodyMedium" style={s.switchLabel}>Set as Default</Text></View>
-            <Switch value={isDefault} onValueChange={setIsDefault} color={theme.colors.primary} />
+            <Switch value={isDefault} onValueChange={setIsDefault} thumbColor={isDefault ? theme.colors.primary : "#f4f3f4"} trackColor={{ false: "#e0e0e0", true: theme.colors.primaryContainer }} />
           </View>
           <View style={s.switchRow}>
             <View><Text variant="bodyMedium" style={s.switchLabel}>Pickup Point Fallback</Text></View>
-            <Switch value={isPickup} onValueChange={setIsPickup} color={theme.colors.primary} />
+            <Switch value={isPickup} onValueChange={setIsPickup} thumbColor={isPickup ? theme.colors.primary : "#f4f3f4"} trackColor={{ false: "#e0e0e0", true: theme.colors.primaryContainer }} />
           </View>
 
           <Button mode="contained" onPress={handleSubmit(onSubmit)} loading={isPending} contentStyle={{ paddingVertical: SPACING.xs }}>
