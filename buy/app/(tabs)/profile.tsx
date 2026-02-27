@@ -76,7 +76,7 @@ export default function ProfileScreen() {
           <Divider/>
           <MI icon="help-circle-outline" label="Help & Support" subtitle="Call, chat, or WhatsApp" onPress={()=>router.push('/support')}/>
           <Divider/>
-          <MI icon="shield-outline" label="Privacy & Security" onPress={()=>{}}/>
+          <MI icon="shield-outline" label="Privacy & Security" onPress={()=>router.push('/privacy')}/>
           <Divider/>
           <View style={ms.item}>
             <View style={[ms.ic]}><Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={theme.colors.primary}/></View>

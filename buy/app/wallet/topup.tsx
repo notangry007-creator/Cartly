@@ -113,7 +113,7 @@ export default function WalletTopUpScreen() {
                   setSelectedAmount(null);
                   Haptics.selectionAsync();
                   if (k === '⌫') { setCustomAmount(p => p.slice(0,-1)); return; }
-                  const next = (customAmount + k).replace(/^0+(?=d)/, '');
+                  const next = (customAmount + k).replace(/^0+(?=\d)/, '');
                   if (Number(next) <= 25000) setCustomAmount(next);
                 }}
                 disabled={!k}

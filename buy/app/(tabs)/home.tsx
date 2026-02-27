@@ -14,6 +14,7 @@ import { useProducts, useCategories } from '../../src/hooks/useProducts';
 import { ZONES } from '../../src/data/zones';
 import { BANNERS } from '../../src/data/seed';
 import { IMG } from '../../src/data/images';
+import { requestNotificationPermission } from '../../src/utils/pushNotifications';
 import ProductCard from '../../src/components/common/ProductCard';
 import CachedImage from '../../src/components/common/CachedImage';
 import { BannerSkeleton, ProductRowSkeleton } from '../../src/components/common/SkeletonLoader';
@@ -66,6 +67,11 @@ export default function HomeScreen() {
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
   const bannerScrollRef = useRef<any>(null);
+
+  // Request notification permission once on first home mount
+  useEffect(() => {
+    requestNotificationPermission().catch(() => {});
+  }, []);
 
   // Auto-advance banners every 4 seconds
   useEffect(() => {

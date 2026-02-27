@@ -120,7 +120,8 @@ export default function RootLayout() {
                     <Stack.Screen name="addresses/index" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="addresses/new" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="addresses/edit/[id]" options={{ animation: 'slide_from_right' }} />
-                    <Stack.Screen name="wallet" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="wallet/index" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="wallet/topup" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="returns" options={{ animation: 'slide_from_right' }} />
@@ -129,8 +130,7 @@ export default function RootLayout() {
                     <Stack.Screen name="offers" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="seller/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="return/[id]" options={{ animation: 'slide_from_right' }} />
-                    <Stack.Screen name="wallet/index" options={{ animation: 'slide_from_right' }} />
-                    <Stack.Screen name="wallet/topup" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />
                   </Stack>
                 </AppInitializer>
               </ToastProvider>

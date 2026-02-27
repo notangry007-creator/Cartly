@@ -3,6 +3,7 @@ import { Order, OrderStatus, ReturnRequest } from '../types';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
 import { v4 as uuid } from 'uuid';
 import { addDaysToDate } from '../utils/helpers';
+import { scheduleOrderProgressNotifications, scheduleOrderNotification } from '../utils/pushNotifications';
 const ok = (uid:string) => STORAGE_KEYS.ORDERS+'_'+uid;
 const rk = (uid:string) => STORAGE_KEYS.RETURN_REQUESTS+'_'+uid;
 async function progressOrder(uid:string, oid:string, status:OrderStatus, note:string) {
@@ -33,6 +34,8 @@ export const useCreateOrder = () => {
       if (typeof globalThis !== 'undefined') {
         (globalThis as any).__buyOrderTimers = [...((globalThis as any).__buyOrderTimers ?? []), t1, t2];
       }
+      // Schedule push notifications for the full order journey
+      scheduleOrderProgressNotifications(no.id).catch(() => {});
       return no;
     },
     onSuccess: (_,v) => qc.invalidateQueries({ queryKey:['orders',v.userId] }),
@@ -52,6 +55,7 @@ export const useCancelOrder = () => {
   return useMutation({
     mutationFn: async ({userId,orderId}:{userId:string;orderId:string}) => {
       await progressOrder(userId,orderId,'cancelled','Cancelled by buyer');
+      scheduleOrderNotification(orderId, 'cancelled', 0).catch(() => {});
     },
     onSuccess: (_,v) => { qc.invalidateQueries({queryKey:['orders',v.userId]}); qc.invalidateQueries({queryKey:['order',v.userId,v.orderId]}); },
   });

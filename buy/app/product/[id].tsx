@@ -13,7 +13,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSequence, withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { useProduct, useSeller, useReviews, useAddReview } from '../../src/hooks/useProducts';
+import { useProduct, useSeller, useReviews } from '../../src/hooks/useProducts';
 import { useCartStore } from '../../src/stores/cartStore';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useZoneStore } from '../../src/stores/zoneStore';
@@ -25,7 +25,7 @@ import {
   getAvailableDeliveryOptions, getDeliveryFee, getETA, timeAgo,
 } from '../../src/utils/helpers';
 import { theme, SPACING, RADIUS } from '../../src/theme';
-import { IMG, getProductImages, getProductBlurhashes } from '../../src/data/images';
+import { IMG } from '../../src/data/images';
 
 const { width: W } = Dimensions.get('window');
 
