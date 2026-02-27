@@ -4,11 +4,11 @@ import { Text, Surface, ActivityIndicator } from 'react-native-paper';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCategories } from '../../src/hooks/useProducts';
-import { IMG } from '../../src/data/images';
-import CachedImage from '../../src/components/common/CachedImage';
-import { SPACING, RADIUS, theme } from '../../src/theme';
-import { SkeletonBox } from '../../src/components/common/SkeletonLoader';
+import { useCategories } from '@/src/hooks/useProducts';
+import { IMG } from '@/src/data/images';
+import CachedImage from '@/src/components/common/CachedImage';
+import { SPACING, RADIUS, theme } from '@/src/theme';
+import { SkeletonBox } from '@/src/components/common/SkeletonLoader';
 
 export default function CategoriesScreen() {
   const router = useRouter();

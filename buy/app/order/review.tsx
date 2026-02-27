@@ -9,12 +9,12 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useOrder } from '../../src/hooks/useOrders';
-import { useAddReview } from '../../src/hooks/useProducts';
-import { useToast } from '../../src/context/ToastContext';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useOrder } from '@/src/hooks/useOrders';
+import { useAddReview } from '@/src/hooks/useProducts';
+import { useToast } from '@/src/context/ToastContext';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 const schema = z.object({
   rating: z.number().min(1, 'Please select a rating').max(5),

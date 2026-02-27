@@ -5,10 +5,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { useZoneStore } from '../src/stores/zoneStore';
-import { ZONES } from '../src/data/zones';
-import { ZoneId } from '../src/types';
-import { SPACING, RADIUS, theme } from '../src/theme';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { ZONES } from '@/src/data/zones';
+import { ZoneId } from '@/src/types';
+import { SPACING, RADIUS, theme } from '@/src/theme';
 
 export default function OnboardingScreen() {
   const router = useRouter();

@@ -1,19 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Text, Chip, Surface, Button } from 'react-native-paper';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { SkeletonBox, OrderCardSkeleton } from '../../src/components/common/SkeletonLoader';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useOrders } from '../../src/hooks/useOrders';
-import { Order, OrderStatus } from '../../src/types';
-import { formatDate, formatNPR } from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
-const STATUS_COLORS: Record<OrderStatus,string> = { pending:'#FF8F00', confirmed:'#1565C0', packed:'#6A1B9A', shipped:'#00838F', out_for_delivery:'#E65100', delivered:'#2E7D32', cancelled:'#B71C1C', return_requested:'#F57F17', return_approved:'#558B2F', return_picked:'#00695C', refunded:'#37474F' };
-const STATUS_LABELS: Record<OrderStatus,string> = { pending:'Pending', confirmed:'Confirmed', packed:'Packed', shipped:'Shipped', out_for_delivery:'Out for Delivery', delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return Requested', return_approved:'Return Approved', return_picked:'Picked Up', refunded:'Refunded' };
-type Filter = 'all'|'active'|'delivered'|'cancelled';
+import { OrderCardSkeleton } from '@/src/components/common/SkeletonLoader';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useOrders } from '@/src/hooks/useOrders';
+import { Order, OrderStatus } from '@/src/types';
+import { formatDate, formatNPR } from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+
+const STATUS_COLORS: Record<OrderStatus, string> = { pending:'#FF8F00', confirmed:'#1565C0', packed:'#6A1B9A', shipped:'#00838F', out_for_delivery:'#E65100', delivered:'#2E7D32', cancelled:'#B71C1C', return_requested:'#F57F17', return_approved:'#558B2F', return_picked:'#00695C', refunded:'#37474F' };
+const STATUS_LABELS: Record<OrderStatus, string> = { pending:'Pending', confirmed:'Confirmed', packed:'Packed', shipped:'Shipped', out_for_delivery:'Out for Delivery', delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return Requested', return_approved:'Return Approved', return_picked:'Picked Up', refunded:'Refunded' };
+type Filter = 'all' | 'active' | 'delivered' | 'cancelled';
+
+// ─── Memoized order card ──────────────────────────────────────────────────────
+interface OrderCardProps {
+  order: Order;
+  onPress: (orderId: string) => void;
+}
+
+const OrderCard = React.memo(function OrderCard({ order, onPress }: OrderCardProps) {
+  return (
+    <TouchableOpacity
+      onPress={() => onPress(order.id)}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`Order ${order.id.slice(-8).toUpperCase()}, ${STATUS_LABELS[order.status]}, total ${formatNPR(order.total)}`}
+    >
+      <Surface style={s.card} elevation={1}>
+        <View style={s.cardHeader}>
+          <Text variant="labelMedium" style={s.orderId}>#{order.id.slice(-8).toUpperCase()}</Text>
+          <View style={[s.badge, { backgroundColor: STATUS_COLORS[order.status] + '20' }]}>
+            <Text style={[s.badgeTxt, { color: STATUS_COLORS[order.status] }]}>
+              {STATUS_LABELS[order.status]}
+            </Text>
+          </View>
+        </View>
+        <View style={s.cardBody}>
+          {order.items[0] && (
+            <Image source={{ uri: order.items[0].imageUrl }} style={s.itemImg} contentFit="cover" />
+          )}
+          <View style={s.itemInfo}>
+            <Text variant="labelMedium" style={s.itemTitle} numberOfLines={2}>
+              {order.items[0]?.title}
+            </Text>
+            {order.items.length > 1 && (
+              <Text variant="labelSmall" style={s.more}>+{order.items.length - 1} more</Text>
+            )}
+            <Text variant="labelSmall" style={s.date}>{formatDate(order.createdAt)}</Text>
+          </View>
+          <View style={s.amount}>
+            <Text variant="titleSmall" style={s.total}>{formatNPR(order.total)}</Text>
+            <Text variant="labelSmall" style={s.method}>{order.paymentMethod.toUpperCase()}</Text>
+          </View>
+        </View>
+        <View style={s.cardFooter}>
+          <Ionicons name="time-outline" size={13} color="#999" />
+          <Text variant="labelSmall" style={s.eta}>
+            {order.status === 'delivered'
+              ? 'Delivered ' + formatDate(order.timeline.find(t => t.status === 'delivered')?.timestamp ?? order.expectedDelivery)
+              : 'Expected: ' + formatDate(order.expectedDelivery)}
+          </Text>
+        </View>
+      </Surface>
+    </TouchableOpacity>
+  );
+});
+
 export default function OrdersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -21,6 +77,7 @@ export default function OrdersScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const { data: orders=[], isLoading, refetch } = useOrders(user?.id??'');
   const isFirstLoad = isLoading && orders.length === 0;
+  const handleOrderPress = useCallback((orderId: string) => router.push(`/order/${orderId}`), [router]);
   if (!user) return (
     <View style={[s.container,{paddingTop:insets.top}]}>
       <View style={s.header}><Text variant="headlineSmall" style={s.headerTitle}>Orders</Text></View>
@@ -46,29 +103,7 @@ export default function OrdersScreen() {
       <FlatList data={filtered} keyExtractor={i=>i.id} contentContainerStyle={s.list} refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[theme.colors.primary]}/>}
         getItemLayout={(_data, index) => ({ length: 136, offset: 136 * index + SPACING.md, index })}
         ListEmptyComponent={<View style={s.empty}><Ionicons name="receipt-outline" size={64} color="#ccc"/><Text variant="titleMedium" style={s.emptyTitle}>No orders yet</Text><Button mode="contained" onPress={()=>router.push('/(tabs)/home')}>Start Shopping</Button></View>}
-        renderItem={({item})=>(
-          <TouchableOpacity onPress={()=>router.push('/order/'+item.id)} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={`Order ${item.id.slice(-8).toUpperCase()}, ${STATUS_LABELS[item.status]}, total ${formatNPR(item.total)}`}>
-            <Surface style={s.card} elevation={1}>
-              <View style={s.cardHeader}>
-                <Text variant="labelMedium" style={s.orderId}>#{item.id.slice(-8).toUpperCase()}</Text>
-                <View style={[s.badge,{backgroundColor:STATUS_COLORS[item.status]+'20'}]}><Text style={[s.badgeTxt,{color:STATUS_COLORS[item.status]}]}>{STATUS_LABELS[item.status]}</Text></View>
-              </View>
-              <View style={s.cardBody}>
-                {item.items[0]&&<Image source={{uri:item.items[0].imageUrl}} style={s.itemImg} contentFit="cover"/>}
-                <View style={s.itemInfo}>
-                  <Text variant="labelMedium" style={s.itemTitle} numberOfLines={2}>{item.items[0]?.title}</Text>
-                  {item.items.length>1&&<Text variant="labelSmall" style={s.more}>+{item.items.length-1} more</Text>}
-                  <Text variant="labelSmall" style={s.date}>{formatDate(item.createdAt)}</Text>
-                </View>
-                <View style={s.amount}>
-                  <Text variant="titleSmall" style={s.total}>{formatNPR(item.total)}</Text>
-                  <Text variant="labelSmall" style={s.method}>{item.paymentMethod.toUpperCase()}</Text>
-                </View>
-              </View>
-              <View style={s.cardFooter}><Ionicons name="time-outline" size={13} color="#999"/><Text variant="labelSmall" style={s.eta}>{item.status==='delivered'?'Delivered '+formatDate(item.timeline.find(t=>t.status==='delivered')?.timestamp??item.expectedDelivery):'Expected: '+formatDate(item.expectedDelivery)}</Text></View>
-            </Surface>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => <OrderCard order={item} onPress={handleOrderPress} />}
       />
     </View>
   );

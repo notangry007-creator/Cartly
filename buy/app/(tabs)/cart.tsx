@@ -9,17 +9,17 @@ import * as Haptics from 'expo-haptics';
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useLocalSearchParams } from 'expo-router';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useCartStore } from '../../src/stores/cartStore';
-import { useZoneStore } from '../../src/stores/zoneStore';
-import { useToast } from '../../src/context/ToastContext';
-import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
-import { useWishlistStore } from '../../src/stores/wishlistStore';
-import { PRODUCTS, COUPONS } from '../../src/data/seed';
-import { formatNPR, getDiscountPercent, getBestETA } from '../../src/utils/helpers';
-import { getZone, calculateShippingFee } from '../../src/data/zones';
-import { CartItemSkeleton } from '../../src/components/common/SkeletonLoader';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { useToast } from '@/src/context/ToastContext';
+import { useRecentlyViewedStore } from '@/src/stores/recentlyViewedStore';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { PRODUCTS, COUPONS } from '@/src/data/seed';
+import { formatNPR, getDiscountPercent, getBestETA } from '@/src/utils/helpers';
+import { getZone, calculateShippingFee } from '@/src/data/zones';
+import { CartItemSkeleton } from '@/src/components/common/SkeletonLoader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 export default function CartScreen() {
   const router = useRouter();
@@ -104,7 +104,7 @@ export default function CartScreen() {
           const renderRightActions = () => (
               <TouchableOpacity
                 style={s.swipeDelete}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeItem(user.id, item.productId, item.variantId); }}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeItem(item.productId, item.variantId); }}
               >
                 <Ionicons name="trash" size={22} color="#fff" />
                 <Text style={s.swipeDeleteTxt}>Delete</Text>
@@ -124,7 +124,7 @@ export default function CartScreen() {
                 <View style={s.qtyRow}>
                    <TouchableOpacity
                     style={s.qBtn}
-                    onPress={()=>updateQuantity(user.id,item.productId,item.variantId,item.quantity-1)}
+                    onPress={()=>updateQuantity(item.productId,item.variantId,item.quantity-1)}
                     accessibilityRole="button"
                     accessibilityLabel={`Decrease quantity of ${product.title}`}
                     accessibilityHint="Tap to reduce quantity by one"
@@ -141,7 +141,7 @@ export default function CartScreen() {
                   </Text>
                   <TouchableOpacity
                     style={s.qBtn}
-                    onPress={()=>{if(item.quantity<variant.stock)updateQuantity(user.id,item.productId,item.variantId,item.quantity+1);}}
+                    onPress={()=>{if(item.quantity<variant.stock)updateQuantity(item.productId,item.variantId,item.quantity+1);}}
                     disabled={item.quantity>=variant.stock}
                     accessibilityRole="button"
                     accessibilityLabel={`Increase quantity of ${product.title}`}
@@ -154,7 +154,7 @@ export default function CartScreen() {
               </View>
               <TouchableOpacity
                 style={s.removeBtn}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); removeItem(user.id, item.productId, item.variantId); }}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); removeItem(item.productId, item.variantId); }}
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${product.title} from cart`}
               >

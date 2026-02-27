@@ -1,21 +1,112 @@
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Text, Button, Surface } from 'react-native-paper';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring, FadeInDown, FadeOutLeft } from 'react-native-reanimated';
-import { useWishlistStore } from '../src/stores/wishlistStore';
-import { useCartStore } from '../src/stores/cartStore';
-import { useAuthStore } from '../src/stores/authStore';
-import { useZoneStore } from '../src/stores/zoneStore';
+import Animated, { FadeInDown, FadeOutLeft } from 'react-native-reanimated';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
 import * as Haptics from 'expo-haptics';
-import { useToast } from '../src/context/ToastContext';
-import { PRODUCTS } from '../src/data/seed';
-import { formatNPR, getDiscountPercent, getBestETA } from '../src/utils/helpers';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import { useToast } from '@/src/context/ToastContext';
+import { PRODUCTS } from '@/src/data/seed';
+import { Product, ZoneId } from '@/src/types';
+import { formatNPR, getDiscountPercent, getBestETA } from '@/src/utils/helpers';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+
+// ─── Memoized wishlist card ───────────────────────────────────────────────────
+interface WishlistCardProps {
+  item: Product;
+  index: number;
+  zoneId: ZoneId;
+  onMoveToCart: (productId: string) => void;
+  onRemove: (productId: string) => void;
+  onPress: (productId: string) => void;
+}
+
+const WishlistCard = React.memo(function WishlistCard({
+  item,
+  index,
+  zoneId,
+  onMoveToCart,
+  onRemove,
+  onPress,
+}: WishlistCardProps) {
+  const discount = getDiscountPercent(item.basePrice, item.baseMrp);
+  const eta = getBestETA(item, zoneId);
+  const cod = item.codAvailableZones.includes(zoneId);
+
+  return (
+    <Animated.View entering={FadeInDown.delay(index * 60)} exiting={FadeOutLeft}>
+      <Surface style={s.card} elevation={1}>
+        <TouchableOpacity
+          style={s.cardInner}
+          onPress={() => onPress(item.id)}
+          activeOpacity={0.85}
+        >
+          <View style={s.imgWrap}>
+            <Image
+              source={{ uri: item.images[0] }}
+              style={s.img}
+              contentFit="cover"
+              transition={200}
+              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+            />
+            {discount > 0 && (
+              <View style={s.discBadge}>
+                <Text style={s.discTxt}>{discount}% off</Text>
+              </View>
+            )}
+            {item.isAuthenticated && (
+              <View style={s.authBadge}>
+                <Ionicons name="shield-checkmark" size={11} color="#fff" />
+              </View>
+            )}
+          </View>
+
+          <View style={s.info}>
+            <Text variant="labelMedium" numberOfLines={2} style={s.title}>{item.title}</Text>
+            <View style={s.priceRow}>
+              <Text variant="titleSmall" style={s.price}>{formatNPR(item.basePrice)}</Text>
+              {discount > 0 && <Text style={s.mrp}>{formatNPR(item.baseMrp)}</Text>}
+            </View>
+            <View style={s.metaRow}>
+              {cod && <View style={s.codBadge}><Text style={s.codTxt}>COD</Text></View>}
+              <Text variant="labelSmall" style={s.eta}>{eta}</Text>
+            </View>
+            <View style={s.actions}>
+              <Button
+                mode="contained"
+                compact
+                onPress={() => onMoveToCart(item.id)}
+                style={s.addBtn}
+                contentStyle={s.addBtnContent}
+                icon="bag-add"
+              >
+                Add to Cart
+              </Button>
+              <TouchableOpacity
+                style={s.removeBtn}
+                onPress={() =>
+                  Alert.alert('Remove', 'Remove from wishlist?', [
+                    { text: 'Cancel' },
+                    { text: 'Remove', style: 'destructive', onPress: () => onRemove(item.id) },
+                  ])
+                }
+              >
+                <Ionicons name="heart" size={20} color="#E53935" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Surface>
+    </Animated.View>
+  );
+});
 
 export default function WishlistScreen() {
   const router = useRouter();
@@ -26,27 +117,35 @@ export default function WishlistScreen() {
   const { addItem } = useCartStore();
   const { showSuccess } = useToast();
 
-  const wishlistProducts = PRODUCTS.filter(p => productIds.includes(p.id));
+  // Memoized: avoid re-filtering the full PRODUCTS array on every render
+  const wishlistProducts = useMemo(
+    () => PRODUCTS.filter(p => productIds.includes(p.id)),
+    [productIds],
+  );
 
-  async function moveToCart(productId: string) {
+  const moveToCart = useCallback(async (productId: string) => {
     if (!user) return;
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
-    await addItem(user.id, productId, product.variants[0].id, 1);
-    await toggle(user.id, productId);
+    await addItem(productId, product.variants[0].id, 1);
+    await toggle(productId);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     showSuccess('Moved to cart');
-  }
+  }, [user, addItem, toggle, showSuccess]);
 
-  async function moveAllToCart() {
+  const moveAllToCart = useCallback(async () => {
     if (!user) return;
     for (const product of wishlistProducts) {
-      await addItem(user.id, product.id, product.variants[0].id, 1);
-      await toggle(user.id, product.id);
+      await addItem(product.id, product.variants[0].id, 1);
+      await toggle(product.id);
     }
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.push('/(tabs)/cart');
-  }
+  }, [user, wishlistProducts, addItem, toggle, router]);
+
+  const handleRemove = useCallback((productId: string) => toggle(productId), [toggle]);
+
+  const handlePress = useCallback((productId: string) => router.push(`/product/${productId}`), [router]);
 
   if (!user) {
     return (
@@ -95,78 +194,16 @@ export default function WishlistScreen() {
             <Button mode="contained" onPress={() => router.push('/(tabs)/home')}>Explore Products</Button>
           </View>
         }
-        renderItem={({ item, index }) => {
-          const discount = getDiscountPercent(item.basePrice, item.baseMrp);
-          const eta = getBestETA(item, zoneId);
-          const cod = item.codAvailableZones.includes(zoneId);
-
-          return (
-            <Animated.View entering={FadeInDown.delay(index * 60)} exiting={FadeOutLeft}>
-              <Surface style={s.card} elevation={1}>
-                <TouchableOpacity
-                  style={s.cardInner}
-                  onPress={() => router.push('/product/' + item.id)}
-                  activeOpacity={0.85}
-                >
-                  <View style={s.imgWrap}>
-                    <Image
-                      source={{ uri: item.images[0] }}
-                      style={s.img}
-                      contentFit="cover"
-                      transition={200}
-                      placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
-                    />
-                    {discount > 0 && (
-                      <View style={s.discBadge}>
-                        <Text style={s.discTxt}>{discount}% off</Text>
-                      </View>
-                    )}
-                    {item.isAuthenticated && (
-                      <View style={s.authBadge}>
-                        <Ionicons name="shield-checkmark" size={11} color="#fff" />
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={s.info}>
-                    <Text variant="labelMedium" numberOfLines={2} style={s.title}>{item.title}</Text>
-                    <View style={s.priceRow}>
-                      <Text variant="titleSmall" style={s.price}>{formatNPR(item.basePrice)}</Text>
-                      {discount > 0 && <Text style={s.mrp}>{formatNPR(item.baseMrp)}</Text>}
-                    </View>
-                    <View style={s.metaRow}>
-                      {cod && <View style={s.codBadge}><Text style={s.codTxt}>COD</Text></View>}
-                      <Text variant="labelSmall" style={s.eta}>{eta}</Text>
-                    </View>
-                    <View style={s.actions}>
-                      <Button
-                        mode="contained"
-                        compact
-                        onPress={() => moveToCart(item.id)}
-                        style={s.addBtn}
-                        contentStyle={s.addBtnContent}
-                        icon="bag-add"
-                      >
-                        Add to Cart
-                      </Button>
-                      <TouchableOpacity
-                        style={s.removeBtn}
-                        onPress={() =>
-                          Alert.alert('Remove', 'Remove from wishlist?', [
-                            { text: 'Cancel' },
-                            { text: 'Remove', style: 'destructive', onPress: () => user && toggle(user.id, item.id) },
-                          ])
-                        }
-                      >
-                        <Ionicons name="heart" size={20} color="#E53935" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </Surface>
-            </Animated.View>
-          );
-        }}
+        renderItem={({ item, index }) => (
+          <WishlistCard
+            item={item}
+            index={index}
+            zoneId={zoneId}
+            onMoveToCart={moveToCart}
+            onRemove={handleRemove}
+            onPress={handlePress}
+          />
+        )}
       />
     </View>
   );

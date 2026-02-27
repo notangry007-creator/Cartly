@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { getItem, setItem } from '../utils/storage';
-import { MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
+import { MD3DarkTheme, MD3LightTheme, MD3Theme } from 'react-native-paper';
 import { theme as lightTheme } from '../theme';
 
-const darkTheme = {
+const darkTheme: MD3Theme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
@@ -25,7 +25,7 @@ const darkTheme = {
 
 interface ThemeState {
   isDark: boolean;
-  currentTheme: typeof lightTheme;
+  currentTheme: MD3Theme;
   toggle: () => Promise<void>;
   loadTheme: () => Promise<void>;
 }
@@ -37,7 +37,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   loadTheme: async () => {
     const saved = await getItem<{ isDark: boolean }>('buy_theme');
     if (saved?.isDark) {
-      set({ isDark: true, currentTheme: darkTheme as any });
+      set({ isDark: true, currentTheme: darkTheme });
     }
   },
 
@@ -45,6 +45,6 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const { isDark } = get();
     const next = !isDark;
     await setItem('buy_theme', { isDark: next });
-    set({ isDark: next, currentTheme: (next ? darkTheme : lightTheme) as any });
+    set({ isDark: next, currentTheme: next ? darkTheme : lightTheme });
   },
 }));

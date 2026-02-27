@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Linking, ScrollView } from 'react-native';
 import { Text, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 const FAQ_ITEMS = [
   { q: 'How do I track my order?', a: 'Go to Orders tab and tap on your order to see the real-time tracking timeline.' },
@@ -50,14 +53,14 @@ export default function SupportScreen() {
       <View style={s.content}>
         <Text variant="titleMedium" style={s.title}>We're here to help</Text>
         <Text variant="bodyMedium" style={s.sub}>Reach us anytime via call, WhatsApp, or email.</Text>
-        {[
-          {icon:'call',label:'Call Support',sub:'Available 9AM–6PM daily',color:'#1565C0',action:()=>Linking.openURL('tel:+97714567890')},
-          {icon:'logo-whatsapp',label:'WhatsApp',sub:'Chat with us instantly',color:'#25D366',action:()=>Linking.openURL('https://wa.me/9779801234567?text=Hi Buy Support')},
-          {icon:'mail',label:'Email Support',sub:'support@buy.com.np',color:'#FF8F00',action:()=>Linking.openURL('mailto:support@buy.com.np')},
-        ].map(item=>(
+        {([
+          {icon:'call' as IoniconsName,label:'Call Support',sub:'Available 9AM–6PM daily',color:'#1565C0',action:()=>Linking.openURL('tel:+97714567890')},
+          {icon:'logo-whatsapp' as IoniconsName,label:'WhatsApp',sub:'Chat with us instantly',color:'#25D366',action:()=>Linking.openURL('https://wa.me/9779801234567?text=Hi Buy Support')},
+          {icon:'mail' as IoniconsName,label:'Email Support',sub:'support@buy.com.np',color:'#FF8F00',action:()=>Linking.openURL('mailto:support@buy.com.np')},
+        ] as const).map(item=>(
           <TouchableOpacity key={item.label} onPress={item.action} activeOpacity={0.8}>
             <Surface style={s.card} elevation={1}>
-              <View style={[s.iconWrap,{backgroundColor:item.color+'20'}]}><Ionicons name={item.icon as any} size={28} color={item.color}/></View>
+              <View style={[s.iconWrap,{backgroundColor:item.color+'20'}]}><Ionicons name={item.icon} size={28} color={item.color}/></View>
               <View style={s.cardInfo}><Text variant="titleSmall" style={s.cardLabel}>{item.label}</Text><Text variant="bodySmall" style={s.cardSub}>{item.sub}</Text></View>
               <Ionicons name="chevron-forward" size={18} color="#ccc"/>
             </Surface>

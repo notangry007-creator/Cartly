@@ -4,7 +4,7 @@ import { Text, Surface } from 'react-native-paper';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '../../types';
-import { theme, SPACING, RADIUS } from '../../theme';
+import { theme, SPACING, RADIUS, useAppColors } from '../../theme';
 
 interface Props {
   order: Order;
@@ -33,6 +33,7 @@ const WAREHOUSE = { latitude: 27.7089, longitude: 85.3145 };
 export default function DeliveryTrackingMap({ order }: Props) {
   const mapRef = useRef<MapView>(null);
   const [tick, setTick] = useState(0);
+  const c = useAppColors();
 
   const dest = {
     latitude: order.addressSnapshot.latitude,
@@ -87,10 +88,10 @@ export default function DeliveryTrackingMap({ order }: Props) {
   const midLng = agent ? (agent.longitude + dest.longitude) / 2 : dest.longitude;
 
   return (
-    <Surface style={s.container} elevation={1}>
+    <Surface style={[s.container, { backgroundColor: c.cardBg }]} elevation={1}>
       <View style={s.titleRow}>
         <Ionicons name={order.status === 'out_for_delivery' ? 'bicycle' : 'car'} size={18} color={theme.colors.primary} />
-        <Text variant="titleSmall" style={s.title}>
+        <Text variant="titleSmall" style={[s.title, { color: c.text }]}>
           {order.status === 'out_for_delivery' ? 'Agent is on the way' : 'Order in transit'}
         </Text>
         <View style={s.liveDot} />
@@ -141,7 +142,7 @@ export default function DeliveryTrackingMap({ order }: Props) {
         )}
       </MapView>
 
-      <Text variant="labelSmall" style={s.note}>
+      <Text variant="labelSmall" style={[s.note, { color: c.textMuted }]}>
         {order.status === 'out_for_delivery'
           ? 'Simulated live tracking — your agent is nearby'
           : 'Order is on its way from our warehouse'}
@@ -153,13 +154,14 @@ export default function DeliveryTrackingMap({ order }: Props) {
 const s = StyleSheet.create({
   container: {
     margin: SPACING.md, marginTop: 0,
-    borderRadius: RADIUS.lg, overflow: 'hidden', backgroundColor: '#fff',
+    borderRadius: RADIUS.lg, overflow: 'hidden',
+    // backgroundColor injected dynamically via useAppColors()
   },
   titleRow: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.xs,
     padding: SPACING.md,
   },
-  title: { flex: 1, fontWeight: '700', color: '#222' },
+  title: { flex: 1, fontWeight: '700' },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E53935' },
   liveText: { color: '#E53935', fontWeight: '700' },
   map: { width: '100%', height: 220 },
@@ -174,5 +176,5 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: '#fff',
   },
-  note: { color: '#888', textAlign: 'center', padding: SPACING.sm },
+  note: { textAlign: 'center', padding: SPACING.sm },
 });

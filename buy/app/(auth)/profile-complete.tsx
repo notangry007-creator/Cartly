@@ -7,11 +7,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useZoneStore } from '../../src/stores/zoneStore';
-import { useCartStore } from '../../src/stores/cartStore';
-import { useNotificationStore } from '../../src/stores/notificationStore';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 const schema = z.object({
   name: z.string().min(2,'Name must be at least 2 characters'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
@@ -32,7 +32,7 @@ export default function ProfileCompleteScreen() {
     if (user) {
       await loadCart(user.id);
       await loadNotifications(user.id);
-      await addNotification(user.id, { title:'Welcome to Buy!', body:'You have NPR 500 wallet bonus. Start shopping!', type:'wallet' });
+      await addNotification({ title:'Welcome to Buy!', body:'You have NPR 500 wallet bonus. Start shopping!', type:'wallet' });
     }
     if (!hasSelectedZone) router.replace('/onboarding');
     else router.replace('/(tabs)/home');

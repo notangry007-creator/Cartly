@@ -13,20 +13,21 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { PinchGestureHandler, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import type { ComponentProps } from 'react';
 import * as Haptics from 'expo-haptics';
-import { useProduct, useSeller, useReviews } from '../../src/hooks/useProducts';
-import { useCartStore } from '../../src/stores/cartStore';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useZoneStore } from '../../src/stores/zoneStore';
-import { useWishlistStore } from '../../src/stores/wishlistStore';
-import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
-import { useToast } from '../../src/context/ToastContext';
+import { useProduct, useSeller, useReviews } from '@/src/hooks/useProducts';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { useRecentlyViewedStore } from '@/src/stores/recentlyViewedStore';
+import { useToast } from '@/src/context/ToastContext';
 import {
   formatNPR, getDiscountPercent, getBestETA,
   getAvailableDeliveryOptions, getDeliveryFee, getETA, timeAgo,
-} from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
-import { IMG } from '../../src/data/images';
+} from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+import { IMG } from '@/src/data/images';
 
 const { width: W } = Dimensions.get('window');
 
@@ -67,10 +68,12 @@ function ZoomableGalleryImage({ uri, blurhash }: { uri: string; blurhash?: strin
   );
 }
 
-function TrustItem({ icon, text, ok }: { icon: string; text: string; ok: boolean }) {
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+function TrustItem({ icon, text, ok }: { icon: IoniconsName; text: string; ok: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 6 }}>
-      <Ionicons name={(ok ? icon : 'close-circle') as any} size={16} color={ok ? '#2E7D32' : '#B71C1C'} />
+      <Ionicons name={ok ? icon : 'close-circle'} size={16} color={ok ? '#2E7D32' : '#B71C1C'} />
       <Text variant="bodySmall" style={{ color: ok ? '#444' : '#B71C1C' }}>{text}</Text>
     </View>
   );
@@ -165,7 +168,7 @@ export default function ProductDetailScreen() {
     if (!inStock) return;
     setAdding(true);
     try {
-      await addItem(user.id, p.id, curVariantId, qty);
+      await addItem(p.id, curVariantId, qty);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showSuccess(`"${p.title.slice(0, 25)}..." added to cart`);
     } catch {
@@ -177,14 +180,14 @@ export default function ProductDetailScreen() {
 
   async function handleBuyNow() {
     if (!user) { router.push('/(auth)/login'); return; }
-    await addItem(user.id, p.id, curVariantId, qty);
+    await addItem(p.id, curVariantId, qty);
     router.push('/checkout');
   }
 
   function handleWishlist() {
     if (!user) { router.push('/(auth)/login'); return; }
     heartScale.value = withSequence(withSpring(1.4, { damping: 4 }), withSpring(1));
-    toggleWishlist(user.id, p.id);
+    toggleWishlist(p.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 

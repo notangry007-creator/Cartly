@@ -5,13 +5,13 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSeller, useProducts } from '../../src/hooks/useProducts';
-import { useZoneStore } from '../../src/stores/zoneStore';
-import ProductCard from '../../src/components/common/ProductCard';
-import { ProductGridSkeleton } from '../../src/components/common/SkeletonLoader';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { formatNPR } from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useSeller, useProducts } from '@/src/hooks/useProducts';
+import { useZoneStore } from '@/src/stores/zoneStore';
+import ProductCard from '@/src/components/common/ProductCard';
+import { ProductGridSkeleton } from '@/src/components/common/SkeletonLoader';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { formatNPR } from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 export default function SellerScreen() {
   const router = useRouter();

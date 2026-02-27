@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, Surface, Divider, Switch, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuthStore } from '../src/stores/authStore';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 import { useRouter } from 'expo-router';
+
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 interface PrivacySetting {
   id: string;
   title: string;
   subtitle: string;
-  icon: string;
+  icon: IoniconsName;
 }
 
 const SETTINGS: PrivacySetting[] = [
@@ -81,7 +84,7 @@ export default function PrivacyScreen() {
             <React.Fragment key={s.id}>
               <View style={styles.row}>
                 <View style={[styles.iconWrap]}>
-                  <Ionicons name={s.icon as any} size={20} color={theme.colors.primary} />
+                  <Ionicons name={s.icon} size={20} color={theme.colors.primary} />
                 </View>
                 <View style={styles.rowInfo}>
                   <Text variant="bodyMedium" style={styles.rowTitle}>{s.title}</Text>

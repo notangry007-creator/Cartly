@@ -2,11 +2,14 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withDelay } from 'react-native-reanimated';
 import { SPACING, RADIUS, theme } from '../../theme';
 
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
 // Preset configs for common empty states
-const PRESETS: Record<string, { icon: string; color: string; bgColor: string }> = {
+const PRESETS: Record<string, { icon: IoniconsName; color: string; bgColor: string }> = {
   cart:          { icon: 'bag-outline',         color: theme.colors.primary,  bgColor: theme.colors.primaryContainer },
   orders:        { icon: 'receipt-outline',      color: '#1565C0',             bgColor: '#E3F2FD' },
   wishlist:      { icon: 'heart-outline',        color: '#C62828',             bgColor: '#FFEBEE' },
@@ -18,7 +21,7 @@ const PRESETS: Record<string, { icon: string; color: string; bgColor: string }> 
 };
 
 interface Props {
-  icon?: string;
+  icon?: IoniconsName;
   preset?: keyof typeof PRESETS;
   title: string;
   subtitle?: string;
@@ -61,7 +64,7 @@ export default function EmptyState({
         {/* Decorative rings */}
         <View style={[s.ringOuter, { borderColor: p.bgColor }]} />
         <View style={[s.ringInner, { borderColor: p.bgColor, backgroundColor: p.bgColor }]} />
-        <Ionicons name={finalIcon as any} size={52} color={p.color} />
+        <Ionicons name={finalIcon} size={52} color={p.color} />
       </Animated.View>
 
       <Text variant="titleMedium" style={s.title}>{title}</Text>

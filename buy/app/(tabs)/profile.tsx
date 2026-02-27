@@ -2,18 +2,22 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
 import { Text, Surface, Divider, Button, Avatar } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useNotificationStore } from '../../src/stores/notificationStore';
-import { useThemeStore } from '../../src/stores/themeStore';
-import { useWishlistStore } from '../../src/stores/wishlistStore';
-import { formatNPR } from '../../src/utils/helpers';
-import { theme, SPACING, RADIUS } from '../../src/theme';
-function MI({ icon, label, subtitle, onPress, badge, danger }: { icon:string; label:string; subtitle?:string; onPress:()=>void; badge?:number; danger?:boolean }) {
+import { useAuthStore } from '@/src/stores/authStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
+import { useThemeStore } from '@/src/stores/themeStore';
+import { useWishlistStore } from '@/src/stores/wishlistStore';
+import { formatNPR } from '@/src/utils/helpers';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+function MI({ icon, label, subtitle, onPress, badge, danger }: { icon: IoniconsName; label:string; subtitle?:string; onPress:()=>void; badge?:number; danger?:boolean }) {
   return (
     <TouchableOpacity style={ms.item} onPress={onPress} activeOpacity={0.7}>
-      <View style={[ms.ic,danger&&ms.icD]}><Ionicons name={icon as any} size={20} color={danger?'#B71C1C':theme.colors.primary}/></View>
+      <View style={[ms.ic,danger&&ms.icD]}><Ionicons name={icon} size={20} color={danger?'#B71C1C':theme.colors.primary}/></View>
       <View style={ms.lw}><Text variant="bodyMedium" style={[ms.label,danger&&ms.dLabel]}>{label}</Text>{subtitle&&<Text variant="labelSmall" style={ms.sub}>{subtitle}</Text>}</View>
       {badge&&badge>0?<View style={ms.badge}><Text style={ms.badgeTxt}>{badge}</Text></View>:null}
       <Ionicons name="chevron-forward" size={16} color="#ccc"/>

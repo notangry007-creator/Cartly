@@ -3,20 +3,24 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl }
 import { Text, Button, Surface, Divider, ActivityIndicator } from 'react-native-paper';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../src/stores/authStore';
+import { useAuthStore } from '@/src/stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
-import { useOrder, useCancelOrder, useUpdateOrderStatus } from '../../src/hooks/useOrders';
+import { useOrder, useCancelOrder, useUpdateOrderStatus } from '@/src/hooks/useOrders';
 import { useCallback } from 'react';
-import { useCartStore } from '../../src/stores/cartStore';
-import { formatDate, formatDateTime, formatNPR } from '../../src/utils/helpers';
-import { OrderStatus } from '../../src/types';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import DeliveryTrackingMap from '../../src/components/common/DeliveryTrackingMap';
-import { theme, SPACING, RADIUS } from '../../src/theme';
-const SL: Record<OrderStatus,string> = { pending:'Order Placed', confirmed:'Confirmed', packed:'Packed', shipped:'Shipped', out_for_delivery:'Out for Delivery', delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return Requested', return_approved:'Return Approved', return_picked:'Picked Up', refunded:'Refunded' };
-const SI: Record<OrderStatus,string> = { pending:'hourglass', confirmed:'checkmark-circle', packed:'cube', shipped:'car', out_for_delivery:'bicycle', delivered:'checkmark-done-circle', cancelled:'close-circle', return_requested:'return-up-back', return_approved:'checkmark-circle', return_picked:'cube-outline', refunded:'wallet' };
+import { useCartStore } from '@/src/stores/cartStore';
+import { formatDate, formatDateTime, formatNPR } from '@/src/utils/helpers';
+import { OrderStatus } from '@/src/types';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import DeliveryTrackingMap from '@/src/components/common/DeliveryTrackingMap';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+const SL: Record<OrderStatus, string> = { pending:'Order Placed', confirmed:'Confirmed', packed:'Packed', shipped:'Shipped', out_for_delivery:'Out for Delivery', delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return Requested', return_approved:'Return Approved', return_picked:'Picked Up', refunded:'Refunded' };
+const SI: Record<OrderStatus, IoniconsName> = { pending:'hourglass', confirmed:'checkmark-circle', packed:'cube', shipped:'car', out_for_delivery:'bicycle', delivered:'checkmark-done-circle', cancelled:'close-circle', return_requested:'return-up-back', return_approved:'checkmark-circle', return_picked:'cube-outline', refunded:'wallet' };
 const TL_ORDER: OrderStatus[] = ['pending','confirmed','packed','shipped','out_for_delivery','delivered'];
 const NEXT: Record<string,OrderStatus> = { pending:'confirmed', confirmed:'packed', packed:'shipped', shipped:'out_for_delivery', out_for_delivery:'delivered' };
 
@@ -50,7 +54,7 @@ export default function OrderDetailScreen() {
     if (!user || !order) return;
     const o = order;
     for (const item of o.items) {
-      await addItem(user.id, item.productId, item.variantId, item.quantity);
+      await addItem(item.productId, item.variantId, item.quantity);
     }
     router.push('/(tabs)/cart');
   }
@@ -64,7 +68,7 @@ export default function OrderDetailScreen() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => { queryClient.invalidateQueries({ queryKey: ['order', user?.id, order?.id] }); }} colors={[theme.colors.primary]} />}
       >
         <Surface style={s.statusCard} elevation={2}>
-          <View style={s.statusTop}><Ionicons name={SI[order.status] as any} size={36} color={theme.colors.primary}/><View><Text variant="headlineSmall" style={s.statusTitle}>{SL[order.status]}</Text><Text variant="bodySmall" style={{color:'#888'}}>{order.status==='delivered'?'Delivered '+formatDate(order.timeline.find(t=>t.status==='delivered')?.timestamp??order.expectedDelivery):'Expected: '+formatDate(order.expectedDelivery)}</Text></View></View>
+          <View style={s.statusTop}><Ionicons name={SI[order.status]} size={36} color={theme.colors.primary}/><View><Text variant="headlineSmall" style={s.statusTitle}>{SL[order.status]}</Text><Text variant="bodySmall" style={{color:'#888'}}>{order.status==='delivered'?'Delivered '+formatDate(order.timeline.find(t=>t.status==='delivered')?.timestamp??order.expectedDelivery):'Expected: '+formatDate(order.expectedDelivery)}</Text></View></View>
           <View style={s.timeline}>
             {TL_ORDER.map((st,i)=>{const done=tlStatuses.includes(st);const isCur=order.status===st;const tl=order.timeline.find(t=>t.status===st);return(
               <View key={st} style={s.tlItem}>

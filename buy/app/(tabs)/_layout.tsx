@@ -1,16 +1,19 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle,
   withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { useEffect, useRef } from 'react';
-import { useCartStore } from '../../src/stores/cartStore';
-import { useNotificationStore } from '../../src/stores/notificationStore';
-import { theme } from '../../src/theme';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
+import { theme } from '@/src/theme';
 
-function Badge({ name, focused, count }: { name: string; focused: boolean; count?: number }) {
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+function Badge({ name, focused, count }: { name: IoniconsName; focused: boolean; count?: number }) {
   const prevCount = useRef(count ?? 0);
   const scale = useSharedValue(1);
 
@@ -29,7 +32,7 @@ function Badge({ name, focused, count }: { name: string; focused: boolean; count
 
   return (
     <View>
-      <Ionicons name={name as any} size={24} color={focused ? theme.colors.primary : '#999'} />
+      <Ionicons name={name} size={24} color={focused ? theme.colors.primary : '#999'} />
       {count && count > 0 ? (
         <Animated.View style={[s.badge, badgeStyle]}>
           <Text style={s.badgeTxt}>{count > 99 ? '99+' : count}</Text>

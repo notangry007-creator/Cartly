@@ -4,11 +4,11 @@ import { Text, Surface, Button, FAB } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useAddresses, useDeleteAddress } from '../../src/hooks/useAddresses';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { useToast } from '../../src/context/ToastContext';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useAddresses, useDeleteAddress } from '@/src/hooks/useAddresses';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { useToast } from '@/src/context/ToastContext';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 export default function AddressesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();

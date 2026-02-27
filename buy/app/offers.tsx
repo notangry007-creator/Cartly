@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Clipboard, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Text, Surface, Chip, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { COUPONS } from '../src/data/seed';
-import { formatNPR, formatDate } from '../src/utils/helpers';
-import { useToast } from '../src/context/ToastContext';
-import ScreenHeader from '../src/components/common/ScreenHeader';
-import { useCartStore } from '../src/stores/cartStore';
-import { useAuthStore } from '../src/stores/authStore';
-import { theme, SPACING, RADIUS } from '../src/theme';
+import { COUPONS } from '@/src/data/seed';
+import { formatNPR, formatDate } from '@/src/utils/helpers';
+import { useToast } from '@/src/context/ToastContext';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { useCartStore } from '@/src/stores/cartStore';
+import { useAuthStore } from '@/src/stores/authStore';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 
 export default function OffersScreen() {
   const insets = useSafeAreaInsets();
@@ -21,8 +22,8 @@ export default function OffersScreen() {
   const { items: cartItems } = useCartStore();
   const [copied, setCopied] = useState<string | null>(null);
 
-  function copyCoupon(code: string) {
-    Clipboard.setString(code);
+  async function copyCoupon(code: string) {
+    await Clipboard.setStringAsync(code);
     setCopied(code);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     showSuccess(`Coupon code "${code}" copied!`);

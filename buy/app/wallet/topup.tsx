@@ -2,19 +2,22 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Text, Button, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useAuthStore } from '../../src/stores/authStore';
-import { useAddWalletTransaction } from '../../src/hooks/useWallet';
-import { useToast } from '../../src/context/ToastContext';
-import { formatNPR } from '../../src/utils/helpers';
-import ScreenHeader from '../../src/components/common/ScreenHeader';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { useAuthStore } from '@/src/stores/authStore';
+import { useAddWalletTransaction } from '@/src/hooks/useWallet';
+import { useToast } from '@/src/context/ToastContext';
+import { formatNPR } from '@/src/utils/helpers';
+import ScreenHeader from '@/src/components/common/ScreenHeader';
+import { theme, SPACING, RADIUS } from '@/src/theme';
+
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 const QUICK_AMOUNTS = [200, 500, 1000, 2000, 5000];
 
-const PAYMENT_METHODS = [
+const PAYMENT_METHODS: { id: string; label: string; icon: IoniconsName; color: string; note: string }[] = [
   { id: 'esewa', label: 'eSewa', icon: 'phone-portrait', color: '#60BB46', note: 'Simulation only' },
   { id: 'khalti', label: 'Khalti', icon: 'phone-portrait', color: '#5C2D91', note: 'Simulation only' },
   { id: 'bank', label: 'Bank Transfer', icon: 'business', color: '#1565C0', note: 'NEFT / RTGS' },
@@ -132,7 +135,7 @@ export default function WalletTopUpScreen() {
               onPress={() => { setSelectedMethod(method.id); Haptics.selectionAsync(); }}
             >
               <View style={[s.methodIcon, { backgroundColor: method.color + '20' }]}>
-                <Ionicons name={method.icon as any} size={22} color={method.color} />
+                <Ionicons name={method.icon} size={22} color={method.color} />
               </View>
               <View style={s.methodInfo}>
                 <Text variant="labelMedium" style={s.methodLabel}>{method.label}</Text>

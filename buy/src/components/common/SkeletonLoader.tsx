@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { View, StyleSheet, ViewStyle, StyleProp, DimensionValue } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,7 +11,7 @@ import Animated, {
 import { RADIUS } from '../../theme';
 
 interface Props {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   style?: StyleProp<ViewStyle>;
@@ -32,7 +32,7 @@ export function SkeletonBox({ width = '100%', height = 16, borderRadius = RADIUS
     <Animated.View
       style={[
         s.box,
-        { width: width as any, height, borderRadius },
+        { width, height, borderRadius },
         animStyle,
         style,
       ]}

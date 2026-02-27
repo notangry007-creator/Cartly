@@ -4,8 +4,8 @@ import { Text, Button, Surface } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { verifyOTP, generateOTP } from '../../src/utils/otp';
-import { theme, SPACING, RADIUS } from '../../src/theme';
+import { verifyOTP, generateOTP } from '@/src/utils/otp';
+import { theme, SPACING, RADIUS } from '@/src/theme';
 export default function OTPScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();

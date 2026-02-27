@@ -41,7 +41,7 @@ function ProductCard({ product, zoneId, onPress }: Props) {
   function handleWishlist() {
     if (!user) return;
     heartScale.value = withSequence(withSpring(1.5), withSpring(1));
-    toggle(user.id, product.id);
+    toggle(product.id);
   }
 
   const accessibilityHint = `${product.title}, ${formatNPR(product.basePrice)}${discount > 0 ? `, ${discount}% off` : ''}, rated ${product.rating} out of 5, ${cod ? 'COD available' : 'prepaid only'}, ${eta} delivery`;
