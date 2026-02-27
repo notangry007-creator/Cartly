@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Share, Alert } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -36,6 +36,26 @@ export default function OrderConfirmationScreen() {
     contentOpacity.value = withDelay(400, withTiming(1, { duration: 400 }));
     contentTranslate.value = withDelay(400, withSpring(0, { damping: 14 }));
   }, []);
+
+  async function handleShareInvoice() {
+    const shortId = (orderId ?? '').slice(-10).toUpperCase();
+    const payLabel = paymentMethod === 'cod' ? 'Cash on Delivery' : 'Buy Wallet';
+    const deliveryLabel = expectedDelivery ? formatDate(expectedDelivery) : 'TBD';
+    const message =
+      `🛍️ Order Confirmed — Buy App\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Order ID:  #${shortId}\n` +
+      `Amount:    ${formatNPR(Number(total ?? 0))}\n` +
+      `Payment:   ${payLabel}\n` +
+      `Delivery:  ${deliveryLabel}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Track your order in the Buy app.`;
+    try {
+      await Share.share({ message, title: `Order #${shortId} — Buy` });
+    } catch {
+      Alert.alert('Share failed', 'Could not share the invoice.');
+    }
+  }
 
   const checkStyle = useAnimatedStyle(() => ({
     transform: [{ scale: checkScale.value }],
@@ -113,6 +133,17 @@ export default function OrderConfirmationScreen() {
           icon="receipt"
         >
           Track My Order
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={handleShareInvoice}
+          style={s.secondaryBtn}
+          contentStyle={s.btnContent}
+          icon="share-social-outline"
+          accessibilityRole="button"
+          accessibilityLabel="Share order invoice"
+        >
+          Share Invoice
         </Button>
         <Button
           mode="outlined"

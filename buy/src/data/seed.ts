@@ -1,6 +1,35 @@
 import { Banner, Category, Coupon, Product, Review, Seller } from '../types';
 import { Address } from '../types';
 
+// ─── Flash Sales ──────────────────────────────────────────────────────────────
+export interface FlashSale {
+  id: string;
+  title: string;
+  subtitle: string;
+  endsAt: string; // ISO timestamp
+  productIds: string[];
+  discountPercent: number;
+}
+
+export const FLASH_SALES: FlashSale[] = [
+  {
+    id: 'fs1',
+    title: '⚡ Flash Sale',
+    subtitle: 'Up to 30% off on Electronics',
+    endsAt: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(), // 4 hours from now
+    productIds: ['p1', 'p2', 'p5', 'p11', 'p13', 'p14'],
+    discountPercent: 30,
+  },
+  {
+    id: 'fs2',
+    title: '🔥 Daily Deal',
+    subtitle: 'Organic products at special prices',
+    endsAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // 8 hours from now
+    productIds: ['p6', 'p10', 'p20', 'p21', 'p24', 'p25'],
+    discountPercent: 15,
+  },
+];
+
 // ─── Sellers ──────────────────────────────────────────────────────────────────
 export const SELLERS: Seller[] = [
   { id:'s1', name:'TechNepal Store', logoUrl:'https://picsum.photos/seed/s1/80/80', isVerified:true, fulfillmentType:'buy_fulfilled', rating:4.7, totalReviews:1240, phone:'+977-9801234567', whatsapp:'9801234567', returnPolicy:'7-day easy returns for electronics. Item must be unused and in original packaging.' },

@@ -20,6 +20,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useZoneStore } from '../../src/stores/zoneStore';
 import { useWishlistStore } from '../../src/stores/wishlistStore';
 import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
+import { usePriceAlertStore } from '../../src/stores/priceAlertStore';
 import { useToast } from '../../src/context/ToastContext';
 import {
   formatNPR, getDiscountPercent, getBestETA,
@@ -85,6 +86,7 @@ export default function ProductDetailScreen() {
   const { addItem } = useCartStore();
   const { isWishlisted, toggle: toggleWishlist } = useWishlistStore();
   const { addProduct: addRecentlyViewed } = useRecentlyViewedStore();
+  const { hasAlert, addAlert, removeAlert } = usePriceAlertStore();
   const { showSuccess, showError } = useToast();
 
   const { data: product, isLoading, refetch } = useProduct(id);
@@ -159,6 +161,19 @@ export default function ProductDetailScreen() {
   const dOpts = getAvailableDeliveryOptions(p, zoneId);
   const wishlisted = isWishlisted(p.id);
   const inStock = p.inStock && (variant?.stock ?? 0) > 0;
+  const alertActive = hasAlert(p.id, curVariantId);
+
+  async function handleTogglePriceAlert() {
+    if (!user) { router.push('/(auth)/login'); return; }
+    if (alertActive) {
+      await removeAlert(user.id, p.id, curVariantId);
+      showSuccess('Price alert removed');
+    } else {
+      await addAlert(user.id, p.id, curVariantId, variant?.price ?? p.basePrice);
+      showSuccess('🔔 We\'ll notify you when the price drops!');
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
 
   async function handleAddToCart() {
     if (!user) { router.push('/(auth)/login'); return; }
@@ -219,6 +234,14 @@ export default function ProductDetailScreen() {
             style={s.hBtn} accessibilityRole="button" accessibilityLabel={`Share ${product.title}`}
           >
             <Ionicons name="share-social-outline" size={22} color="#333" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/compare')}
+            style={s.hBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Compare products"
+          >
+            <Ionicons name="git-compare-outline" size={22} color="#333" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/(tabs)/cart')} style={s.hBtn} accessibilityLabel="View cart">
             <Ionicons name="bag-outline" size={22} color="#333" />
@@ -300,6 +323,24 @@ export default function ProductDetailScreen() {
           {(variant?.stock ?? 0) <= 5 && (variant?.stock ?? 0) > 0 && (
             <Text style={s.lowStock}>⚠ Only {variant?.stock} left in stock!</Text>
           )}
+
+          {/* Price Drop Alert toggle */}
+          <TouchableOpacity
+            style={[s.alertRow, alertActive && s.alertRowActive]}
+            onPress={handleTogglePriceAlert}
+            accessibilityRole="button"
+            accessibilityLabel={alertActive ? 'Remove price drop alert' : 'Set price drop alert'}
+          >
+            <Ionicons
+              name={alertActive ? 'notifications' : 'notifications-outline'}
+              size={18}
+              color={alertActive ? theme.colors.primary : '#888'}
+            />
+            <Text style={[s.alertTxt, alertActive && s.alertTxtActive]}>
+              {alertActive ? '🔔 Price alert set — we\'ll notify you' : 'Notify me when price drops'}
+            </Text>
+            {alertActive && <Ionicons name="close-circle" size={16} color={theme.colors.primary} />}
+          </TouchableOpacity>
 
           <Divider style={s.divider} />
 
@@ -556,6 +597,10 @@ const s = StyleSheet.create({
   discTag: { backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.sm },
   discTxt: { color: '#2E7D32', fontWeight: '700', fontSize: 13 },
   lowStock: { color: '#FF8F00', fontSize: 12, fontWeight: '600', marginBottom: SPACING.sm },
+  alertRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: '#f5f5f5', marginBottom: SPACING.sm },
+  alertRowActive: { backgroundColor: theme.colors.primaryContainer },
+  alertTxt: { flex: 1, fontSize: 13, color: '#888' },
+  alertTxtActive: { color: theme.colors.primary, fontWeight: '600' },
   divider: { marginVertical: SPACING.sm },
   section: { paddingVertical: SPACING.sm, marginBottom: SPACING.sm },
   secTitle: { fontWeight: '700', color: '#222', marginBottom: SPACING.sm },

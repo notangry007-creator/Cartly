@@ -12,7 +12,7 @@ import { useZoneStore } from '../../src/stores/zoneStore';
 import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
 import { useWishlistStore } from '../../src/stores/wishlistStore';
 import { useProducts, useCategories } from '../../src/hooks/useProducts';
-import { PRODUCTS } from '../../src/data/seed';
+import { PRODUCTS, CATEGORIES, FLASH_SALES, FlashSale } from '../../src/data/seed';
 import { ZONES } from '../../src/data/zones';
 import { BANNERS } from '../../src/data/seed';
 import { IMG } from '../../src/data/images';
@@ -25,6 +25,35 @@ import { theme, SPACING, RADIUS } from '../../src/theme';
 import { ZoneId, Product } from '../../src/types';
 
 const { width: W } = Dimensions.get('window');
+
+// ─── Flash Sale Countdown ────────────────────────────────────────────────────
+function useCountdown(endsAt: string) {
+  const [remaining, setRemaining] = React.useState(0);
+  React.useEffect(() => {
+    function calc() { setRemaining(Math.max(0, new Date(endsAt).getTime() - Date.now())); }
+    calc();
+    const t = setInterval(calc, 1000);
+    return () => clearInterval(t);
+  }, [endsAt]);
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const sec = Math.floor((remaining % 60000) / 1000);
+  return { h, m, sec, expired: remaining === 0 };
+}
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <View style={cd.unit}>
+      <Text style={cd.num}>{String(value).padStart(2, '0')}</Text>
+      <Text style={cd.label}>{label}</Text>
+    </View>
+  );
+}
+const cd = StyleSheet.create({
+  unit: { alignItems: 'center', minWidth: 36 },
+  num: { color: '#fff', fontSize: 20, fontWeight: '800', lineHeight: 24 },
+  label: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: '600' },
+});
 
 // ─── Section Header ─────────────────────────────────────────────────────────
 function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll?: () => void }) {
@@ -60,6 +89,45 @@ function HorizontalProducts({ data, zoneId, isLoading }: { data?: Product[]; zon
   );
 }
 
+// ─── Flash Sale Section ───────────────────────────────────────────────────────
+function FlashSaleSection({ sale, products, zoneId, router }: { sale: FlashSale; products: Product[]; zoneId: ZoneId; router: any }) {
+  const { h, m, sec, expired } = useCountdown(sale.endsAt);
+  if (expired) return null;
+  return (
+    <View style={fs.container}>
+      <View style={fs.header}>
+        <View style={fs.titleWrap}>
+          <Text style={fs.title}>{sale.title}</Text>
+          <Text style={fs.subtitle}>{sale.subtitle}</Text>
+        </View>
+        <View style={fs.countdown}>
+          <CountdownUnit value={h} label="HRS" />
+          <Text style={fs.colon}>:</Text>
+          <CountdownUnit value={m} label="MIN" />
+          <Text style={fs.colon}>:</Text>
+          <CountdownUnit value={sec} label="SEC" />
+        </View>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: SPACING.sm }}>
+        {products.slice(0, 8).map(item => (
+          <View key={item.id} style={{ width: 160 }}>
+            <ProductCard product={item} zoneId={zoneId} onPress={() => router.push(`/product/${item.id}`)} />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+const fs = StyleSheet.create({
+  container: { marginTop: SPACING.md, backgroundColor: '#1a1a2e', borderRadius: RADIUS.lg, marginHorizontal: SPACING.md, overflow: 'hidden', paddingBottom: SPACING.md },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: SPACING.md },
+  titleWrap: { flex: 1 },
+  title: { color: '#FFD700', fontSize: 16, fontWeight: '800' },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
+  countdown: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  colon: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 8 },
+});
+
 // ─── Home Screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
@@ -70,6 +138,7 @@ export default function HomeScreen() {
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
   const bannerScrollRef = useRef<any>(null);
+  const [expandedCatId, setExpandedCatId] = useState<string | null>(null);
 
   // Request notification permission once on first home mount
   useEffect(() => {
@@ -108,10 +177,14 @@ export default function HomeScreen() {
 
   const curZone = ZONES.find(z => z.id === zoneId);
 
+  // Active flash sales (not expired)
+  const activeFlashSales = FLASH_SALES.filter(fs => new Date(fs.endsAt) > new Date());
+
   // Build page sections as FlatList data
   type Section =
     | { type: 'banners' }
     | { type: 'categories' }
+    | { type: 'flash_sale'; saleId: string }
     | { type: 'fast' }
     | { type: 'verified' }
     | { type: 'deals' }
@@ -121,6 +194,7 @@ export default function HomeScreen() {
   const sections: Section[] = [
     { type: 'banners' },
     { type: 'categories' },
+    ...activeFlashSales.map(fs => ({ type: 'flash_sale' as const, saleId: fs.id })),
     ...(recentProducts.length > 0 ? [{ type: 'recent' as const }] : []),
     ...(wishlistProducts.length > 0 ? [{ type: 'wishlist' as const }] : []),
     ...(zoneId === 'ktm_core' || zoneId === 'ktm_outer' ? [{ type: 'fast' as const }] : []),
@@ -169,7 +243,10 @@ export default function HomeScreen() {
           </>
         );
 
-      case 'categories':
+      case 'categories': {
+        const subcats = expandedCatId
+          ? CATEGORIES.filter(c => c.parentId === expandedCatId)
+          : [];
         return (
           <>
             <SectionHeader title="Categories" onSeeAll={() => router.push('/(tabs)/categories')} />
@@ -182,19 +259,53 @@ export default function HomeScreen() {
                   ))
                 : (categories ?? []).map(cat => {
                     const imgData = (IMG.categories as Record<string, { uri: string; blurhash: string }>)[cat.id];
+                    const isExpanded = expandedCatId === cat.id;
                     return (
-                      <TouchableOpacity key={cat.id} style={s.catItem} onPress={() => router.push(`/category/${cat.id}`)}>
-                        <Surface style={s.catImgWrap} elevation={1}>
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={s.catItem}
+                        onPress={() => {
+                          const hasSubs = CATEGORIES.some(c => c.parentId === cat.id);
+                          if (hasSubs) {
+                            setExpandedCatId(isExpanded ? null : cat.id);
+                            Haptics.selectionAsync();
+                          } else {
+                            router.push(`/category/${cat.id}`);
+                          }
+                        }}
+                      >
+                        <Surface style={[s.catImgWrap, isExpanded && s.catImgWrapSel]} elevation={1}>
                           <CachedImage uri={imgData?.uri ?? cat.imageUrl} blurhash={imgData?.blurhash} style={s.catImg} />
                         </Surface>
-                        <Text variant="labelSmall" style={s.catLabel} numberOfLines={1}>{cat.name}</Text>
+                        <Text variant="labelSmall" style={[s.catLabel, isExpanded && s.catLabelSel]} numberOfLines={1}>{cat.name}</Text>
                       </TouchableOpacity>
                     );
                   })
               }
             </ScrollView>
+            {/* Subcategory drill-down row */}
+            {subcats.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.subcatRow}>
+                {subcats.map(sub => (
+                  <TouchableOpacity
+                    key={sub.id}
+                    style={s.subcatChip}
+                    onPress={() => { router.push(`/category/${sub.id}`); setExpandedCatId(null); }}
+                  >
+                    <Text style={s.subcatChipTxt}>{sub.name}</Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={[s.subcatChip, s.subcatChipAll]}
+                  onPress={() => { router.push(`/category/${expandedCatId}`); setExpandedCatId(null); }}
+                >
+                  <Text style={[s.subcatChipTxt, { color: theme.colors.primary }]}>See All →</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
           </>
         );
+      }
 
       case 'recent':
         return (
@@ -227,6 +338,13 @@ export default function HomeScreen() {
             <HorizontalProducts data={verifiedProducts} zoneId={zoneId} isLoading={loadingVerified} />
           </>
         );
+
+      case 'flash_sale': {
+        const sale = FLASH_SALES.find(fs => fs.id === item.saleId);
+        if (!sale) return null;
+        const saleProducts = PRODUCTS.filter(p => sale.productIds.includes(p.id));
+        return <FlashSaleSection key={sale.id} sale={sale} products={saleProducts} zoneId={zoneId} router={router} />;
+      }
 
       case 'deals':
         return (
@@ -340,8 +458,14 @@ const s = StyleSheet.create({
   catRow: { paddingHorizontal: SPACING.md, gap: SPACING.sm },
   catItem: { alignItems: 'center', width: 70 },
   catImgWrap: { borderRadius: 999, overflow: 'hidden', marginBottom: 4 },
+  catImgWrapSel: { borderWidth: 2, borderColor: theme.colors.primary },
   catImg: { width: 56, height: 56, borderRadius: 999 },
   catLabel: { color: '#444', textAlign: 'center', lineHeight: 14 },
+  catLabelSel: { color: theme.colors.primary, fontWeight: '700' },
+  subcatRow: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, gap: SPACING.sm },
+  subcatChip: { paddingHorizontal: SPACING.md, paddingVertical: 6, borderRadius: 999, backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#e0e0e0' },
+  subcatChipAll: { backgroundColor: theme.colors.primaryContainer, borderColor: theme.colors.primary },
+  subcatChipTxt: { fontSize: 12, color: '#444', fontWeight: '600' },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   zoneModal: { backgroundColor: '#fff', borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACING.xl, gap: SPACING.sm },
   zoneModalTitle: { fontWeight: '700', marginBottom: SPACING.sm },

@@ -17,6 +17,7 @@ import { useWishlistStore } from '../src/stores/wishlistStore';
 import { useRecentlyViewedStore } from '../src/stores/recentlyViewedStore';
 import { useNetworkStore } from '../src/stores/networkStore';
 import { useTourStore } from '../src/stores/tourStore';
+import { usePriceAlertStore } from '../src/stores/priceAlertStore';
 import { getAuthToken, getSavedUserId } from '../src/utils/storage';
 import OfflineBanner from '../src/components/common/OfflineBanner';
 import ErrorBoundary from '../src/components/common/ErrorBoundary';
@@ -46,6 +47,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { loadTheme, currentTheme } = useThemeStore();
   const { init: initNetwork } = useNetworkStore();
   const { loadTour } = useTourStore();
+  const { loadAlerts } = usePriceAlertStore();
 
   useEffect(() => {
     const unsubNetwork = initNetwork();
@@ -65,6 +67,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
               loadCart(userId),
               loadNotifications(userId),
               loadWishlist(userId),
+              loadAlerts(userId),
             ]);
           }
         }
@@ -133,6 +136,7 @@ export default function RootLayout() {
                     <Stack.Screen name="seller/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="return/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="compare" options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
                   </Stack>
                 </AppInitializer>
               </ToastProvider>
