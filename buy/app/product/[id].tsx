@@ -14,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PinchGestureHandler, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
-import { useProduct, useSeller, useReviews } from '../../src/hooks/useProducts';
+import { useProduct, useSeller, useReviews, useIsNotifyMe, useToggleNotifyMe } from '../../src/hooks/useProducts';
 import { useCartStore } from '../../src/stores/cartStore';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useZoneStore } from '../../src/stores/zoneStore';
@@ -90,6 +90,8 @@ export default function ProductDetailScreen() {
   const { data: product, isLoading, refetch } = useProduct(id);
   const { data: seller } = useSeller(product?.sellerId ?? '');
   const { data: reviews = [] } = useReviews(id);
+  const { data: isNotifyMe } = useIsNotifyMe(id, user?.id ?? '');
+  const { mutateAsync: toggleNotifyMe, isPending: togglingNotify } = useToggleNotifyMe();
 
   // State
   const [attrSelection, setAttrSelection] = useState<Record<string, string>>({});
@@ -473,27 +475,70 @@ export default function ProductDetailScreen() {
             ))}
           </View>
 
+          {/* Q&A section */}
+          <View style={s.section}>
+            <View style={s.reviewsHeader}>
+              <Text variant="titleSmall" style={s.secTitle}>Questions & Answers</Text>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/product/qa', params: { id: product.id, title: product.title } })}>
+                <Text variant="labelSmall" style={{ color: theme.colors.primary }}>View all →</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.sm, backgroundColor: '#f5f5f5', borderRadius: RADIUS.md }}
+              onPress={() => router.push({ pathname: '/product/qa', params: { id: product.id, title: product.title } })}
+            >
+              <Ionicons name="help-circle-outline" size={20} color={theme.colors.primary} />
+              <Text variant="bodySmall" style={{ color: '#555', flex: 1 }}>
+                Have a question about this product? Ask the seller or community.
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color="#ccc" />
+            </TouchableOpacity>
+          </View>
+
           <View style={{ height: 100 }} />
         </View>
       </ScrollView>
 
       {/* Bottom CTA */}
       <View style={[s.bottomBar, { paddingBottom: insets.bottom + SPACING.sm }]}>
-        <Button
-          mode="outlined" onPress={handleAddToCart}
-          style={s.addBtn} loading={adding}
-          disabled={!inStock}
-          accessibilityLabel="Add to cart"
-        >
-          Add to Cart
-        </Button>
-        <Button
-          mode="contained" onPress={handleBuyNow}
-          style={s.buyBtn} disabled={!inStock}
-          accessibilityLabel={inStock ? 'Buy now' : 'Out of stock'}
-        >
-          {inStock ? 'Buy Now' : 'Out of Stock'}
-        </Button>
+        {inStock ? (
+          <>
+            <Button
+              mode="outlined" onPress={handleAddToCart}
+              style={s.addBtn} loading={adding}
+              accessibilityLabel="Add to cart"
+            >
+              Add to Cart
+            </Button>
+            <Button
+              mode="contained" onPress={handleBuyNow}
+              style={s.buyBtn}
+              accessibilityLabel="Buy now"
+            >
+              Buy Now
+            </Button>
+          </>
+        ) : (
+          <Button
+            mode="contained"
+            onPress={async () => {
+              if (!user) { router.push('/(auth)/login'); return; }
+              const subscribed = await toggleNotifyMe({ productId: p.id, userId: user.id });
+              if (subscribed) {
+                showSuccess('We\'ll notify you when this is back in stock!');
+              } else {
+                showSuccess('Notification removed');
+              }
+            }}
+            loading={togglingNotify}
+            style={[s.buyBtn, { flex: 1 }]}
+            icon={isNotifyMe ? 'bell-off' : 'bell'}
+            buttonColor={isNotifyMe ? '#888' : theme.colors.primary}
+            accessibilityLabel={isNotifyMe ? 'Remove back in stock notification' : 'Notify me when back in stock'}
+          >
+            {isNotifyMe ? 'Remove Notification' : 'Notify When Available'}
+          </Button>
+        )}
       </View>
 
       {/* Full-screen pinch-to-zoom image gallery */}

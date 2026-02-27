@@ -11,6 +11,7 @@ import { useNetworkStore } from '../../stores/networkStore';
 export default function OfflineBanner() {
   const { isOnline, wasOffline } = useNetworkStore();
 
+  // All hooks MUST be called before any conditional return
   const translateY = useSharedValue(-60);
   const opacity = useSharedValue(0);
 
@@ -25,8 +26,9 @@ export default function OfflineBanner() {
         opacity.value = withTiming(0, { duration: 300 });
       }, 2000);
     } else {
-      translateY.value = -60;
-      opacity.value = 0;
+      // Immediately hide when online and not transitioning from offline
+      translateY.value = withTiming(-60, { duration: 200 });
+      opacity.value = withTiming(0, { duration: 200 });
     }
     return () => { if (timer) clearTimeout(timer); };
   }, [isOnline, wasOffline]);
@@ -36,14 +38,20 @@ export default function OfflineBanner() {
     opacity: opacity.value,
   }));
 
+  // Early return AFTER hooks — only skip rendering the DOM node when fully hidden
   if (isOnline && !wasOffline) return null;
 
   return (
-    <Animated.View style={[s.container, !isOnline ? s.offline : s.online, animStyle]}>
+    <Animated.View
+      style={[s.container, !isOnline ? s.offline : s.online, animStyle]}
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={isOnline ? 'Back online, syncing data' : 'No internet connection. Showing cached data.'}
+    >
       <Ionicons
         name={isOnline ? 'wifi' : 'cloud-offline'}
         size={16}
         color="#fff"
+        accessibilityElementsHidden
       />
       <Text style={s.text}>
         {isOnline ? 'Back online — syncing...' : 'No internet connection. Showing cached data.'}

@@ -1,13 +1,14 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { useThemeStore } from '../src/stores/themeStore';
 import { useAuthStore } from '../src/stores/authStore';
 import { useZoneStore } from '../src/stores/zoneStore';
@@ -43,13 +44,54 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { loadNotifications } = useNotificationStore();
   const { loadWishlist } = useWishlistStore();
   const { loadProducts: loadRecentlyViewed } = useRecentlyViewedStore();
-  const { loadTheme, currentTheme } = useThemeStore();
+  const { loadTheme } = useThemeStore();
   const { init: initNetwork } = useNetworkStore();
   const { loadTour } = useTourStore();
+  const router = useRouter();
 
   useEffect(() => {
     const unsubNetwork = initNetwork();
     return () => unsubNetwork();
+  }, []);
+
+  // ─── Push notification tap deep-link handler ──────────────────────────────
+  useEffect(() => {
+    // Handle notification taps when app is already open
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as {
+        orderId?: string;
+        type?: string;
+        status?: string;
+      };
+
+      if (!data) return;
+
+      // Route based on notification type
+      if (data.type === 'order' && data.orderId) {
+        router.push(`/order/${data.orderId}` as any);
+      } else if (data.type === 'return' && data.orderId) {
+        router.push(`/returns` as any);
+      } else if (data.type === 'wallet') {
+        router.push('/wallet' as any);
+      } else if (data.type === 'promo') {
+        router.push('/(tabs)/home' as any);
+      }
+    });
+
+    // Handle notification that launched the app from killed state
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (!response) return;
+      const data = response.notification.request.content.data as {
+        orderId?: string;
+        type?: string;
+      };
+      if (data?.type === 'order' && data.orderId) {
+        // Delay to allow navigation stack to initialize
+        setTimeout(() => router.push(`/order/${data.orderId}` as any), 500);
+      }
+    });
+
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
@@ -68,8 +110,12 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
             ]);
           }
         }
+        await loadRecentlyViewed();
       } catch (e) {
-        console.warn('[AppInit]', e);
+        // Log initialization errors — in production, send to crash reporter (e.g. Sentry)
+        console.error('[AppInit] Initialization failed:', e);
+        // Don't rethrow — allow app to continue with partial state
+        // Users will see empty states rather than a crash
       } finally {
         setReady(true);
         // Hide splash only after stores are hydrated — no white flash
@@ -124,6 +170,7 @@ export default function RootLayout() {
                     <Stack.Screen name="addresses/edit/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="wallet/index" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="wallet/topup" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="wallet/withdraw" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="returns" options={{ animation: 'slide_from_right' }} />
@@ -133,6 +180,11 @@ export default function RootLayout() {
                     <Stack.Screen name="seller/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="return/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="flash-sale" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="loyalty" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="referral" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="pickup-points" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="product/qa" options={{ animation: 'slide_from_right' }} />
                   </Stack>
                 </AppInitializer>
               </ToastProvider>

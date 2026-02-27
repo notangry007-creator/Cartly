@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, FlatList,
-  Dimensions, RefreshControl, ScrollView,
+  Dimensions, RefreshControl,
 } from 'react-native';
-import { Text, Searchbar, Surface } from 'react-native-paper';
+import { Text, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,11 +16,13 @@ import { PRODUCTS } from '../../src/data/seed';
 import { ZONES } from '../../src/data/zones';
 import { BANNERS } from '../../src/data/seed';
 import { IMG } from '../../src/data/images';
+import { getActiveFlashSales } from '../../src/data/flash-sales';
 import { requestNotificationPermission } from '../../src/utils/pushNotifications';
 import * as Haptics from 'expo-haptics';
 import ProductCard from '../../src/components/common/ProductCard';
 import CachedImage from '../../src/components/common/CachedImage';
-import { BannerSkeleton, ProductRowSkeleton } from '../../src/components/common/SkeletonLoader';
+import FlashSaleCountdown from '../../src/components/common/FlashSaleCountdown';
+import { ProductRowSkeleton } from '../../src/components/common/SkeletonLoader';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 import { ZoneId, Product } from '../../src/types';
 
@@ -81,7 +83,8 @@ export default function HomeScreen() {
     const timer = setInterval(() => {
       setBannerIdx(prev => {
         const next = (prev + 1) % BANNERS.length;
-        bannerScrollRef.current?.scrollTo({ x: next * (W - SPACING.lg * 2), animated: true });
+        // FlatList uses scrollToIndex
+        bannerScrollRef.current?.scrollToIndex({ index: next, animated: true });
         return next;
       });
     }, 4000);
@@ -95,6 +98,7 @@ export default function HomeScreen() {
   const { products: recentProducts } = useRecentlyViewedStore();
   const { productIds: wishlistIds } = useWishlistStore();
   const wishlistProducts = PRODUCTS.filter(p => wishlistIds.includes(p.id));
+  const activeFlashSales = getActiveFlashSales();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -112,6 +116,7 @@ export default function HomeScreen() {
   type Section =
     | { type: 'banners' }
     | { type: 'categories' }
+    | { type: 'flash_sales' }
     | { type: 'fast' }
     | { type: 'verified' }
     | { type: 'deals' }
@@ -121,6 +126,7 @@ export default function HomeScreen() {
   const sections: Section[] = [
     { type: 'banners' },
     { type: 'categories' },
+    ...(activeFlashSales.length > 0 ? [{ type: 'flash_sales' as const }] : []),
     ...(recentProducts.length > 0 ? [{ type: 'recent' as const }] : []),
     ...(wishlistProducts.length > 0 ? [{ type: 'wishlist' as const }] : []),
     ...(zoneId === 'ktm_core' || zoneId === 'ktm_outer' ? [{ type: 'fast' as const }] : []),
@@ -133,18 +139,23 @@ export default function HomeScreen() {
       case 'banners':
         return (
           <>
-            <ScrollView
-              ref={bannerScrollRef}
-              horizontal pagingEnabled showsHorizontalScrollIndicator={false}
+            {/* Use FlatList instead of ScrollView to avoid nested VirtualizedList warning */}
+            <FlatList
+              ref={bannerScrollRef as any}
+              data={BANNERS}
+              keyExtractor={b => b.id}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
               style={{ marginTop: SPACING.sm }}
               onScroll={e => setBannerIdx(Math.round(e.nativeEvent.contentOffset.x / (W - SPACING.lg * 2)))}
               scrollEventThrottle={16}
-            >
-              {BANNERS.map(b => {
+              getItemLayout={(_, index) => ({ length: W - SPACING.lg * 2, offset: (W - SPACING.lg * 2) * index, index })}
+              renderItem={({ item: b }) => {
                 const imgData = (IMG.banners as Record<string, { uri: string; blurhash: string }>)[b.id];
                 return (
                   <TouchableOpacity
-                    key={b.id} activeOpacity={0.9}
+                    activeOpacity={0.9}
                     accessibilityRole="button"
                     accessibilityLabel={`${b.title}${b.subtitle ? ': ' + b.subtitle : ''}`}
                     onPress={() => {
@@ -161,8 +172,8 @@ export default function HomeScreen() {
                     </View>
                   </TouchableOpacity>
                 );
-              })}
-            </ScrollView>
+              }}
+            />
             <View style={s.dots}>
               {BANNERS.map((_, i) => <View key={i} style={[s.dot, i === bannerIdx && s.dotA]} />)}
             </View>
@@ -173,26 +184,55 @@ export default function HomeScreen() {
         return (
           <>
             <SectionHeader title="Categories" onSeeAll={() => router.push('/(tabs)/categories')} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
-              {loadingCats
-                ? Array.from({ length: 6 }).map((_, i) => (
-                    <View key={i} style={s.catItem}>
+            {/* Use FlatList instead of ScrollView to avoid nested VirtualizedList warning */}
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={s.catRow}
+              data={loadingCats ? Array.from({ length: 6 }, (_, i) => ({ id: `skel_${i}`, name: '', slug: '', iconName: '', imageUrl: '' })) : (categories ?? [])}
+              keyExtractor={cat => cat.id}
+              getItemLayout={(_, index) => ({ length: 78, offset: 78 * index, index })}
+              renderItem={({ item: cat }) => {
+                if (cat.id.startsWith('skel_')) {
+                  return (
+                    <View style={s.catItem}>
                       <View style={[s.catImgWrap, { width: 56, height: 56, borderRadius: 28, backgroundColor: '#e0e0e0' }]} />
                     </View>
-                  ))
-                : (categories ?? []).map(cat => {
-                    const imgData = (IMG.categories as Record<string, { uri: string; blurhash: string }>)[cat.id];
-                    return (
-                      <TouchableOpacity key={cat.id} style={s.catItem} onPress={() => router.push(`/category/${cat.id}`)}>
-                        <Surface style={s.catImgWrap} elevation={1}>
-                          <CachedImage uri={imgData?.uri ?? cat.imageUrl} blurhash={imgData?.blurhash} style={s.catImg} />
-                        </Surface>
-                        <Text variant="labelSmall" style={s.catLabel} numberOfLines={1}>{cat.name}</Text>
-                      </TouchableOpacity>
-                    );
-                  })
-              }
-            </ScrollView>
+                  );
+                }
+                const imgData = (IMG.categories as Record<string, { uri: string; blurhash: string }>)[cat.id];
+                return (
+                  <TouchableOpacity style={s.catItem} onPress={() => router.push(`/category/${cat.id}`)}>
+                    <Surface style={s.catImgWrap} elevation={1}>
+                      <CachedImage uri={imgData?.uri ?? cat.imageUrl} blurhash={imgData?.blurhash} style={s.catImg} />
+                    </Surface>
+                    <Text variant="labelSmall" style={s.catLabel} numberOfLines={1}>{cat.name}</Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </>
+        );
+
+      case 'flash_sales':
+        return (
+          <>
+            <SectionHeader title="⚡ Flash Sales" onSeeAll={() => router.push('/flash-sale')} />
+            {activeFlashSales.map(sale => {
+              const saleProducts = PRODUCTS.filter(p => sale.productIds.includes(p.id) && p.inStock);
+              return (
+                <View key={sale.id} style={s.flashSaleCard}>
+                  <View style={[s.flashSaleHeader, { backgroundColor: sale.badgeColor }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.flashSaleTitle}>{sale.title}</Text>
+                      <Text style={s.flashSaleSub}>{sale.subtitle}</Text>
+                    </View>
+                    <FlashSaleCountdown endsAt={sale.endsAt} />
+                  </View>
+                  <HorizontalProducts data={saleProducts.slice(0, 6)} zoneId={zoneId} isLoading={false} />
+                </View>
+              );
+            })}
           </>
         );
 
@@ -290,7 +330,10 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
         }
-        removeClippedSubviews={false}
+        removeClippedSubviews
+        windowSize={5}
+        maxToRenderPerBatch={3}
+        initialNumToRender={3}
       />
 
       {/* Zone picker overlay */}
@@ -349,4 +392,17 @@ const s = StyleSheet.create({
   zoneOptA: { borderColor: theme.colors.primary, backgroundColor: '#FFF5F5' },
   zoneOptName: { fontWeight: '600', color: '#222' },
   zoneOptSub: { color: '#888' },
+  // Flash sale styles
+  flashSaleCard: { marginBottom: SPACING.sm },
+  flashSaleHeader: {
+    marginHorizontal: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+  },
+  flashSaleTitle: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  flashSaleSub: { color: 'rgba(255,255,255,0.85)', fontSize: 11, marginTop: 2 },
 });

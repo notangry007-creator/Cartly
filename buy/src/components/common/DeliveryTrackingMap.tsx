@@ -106,10 +106,13 @@ export default function DeliveryTrackingMap({ order }: Props) {
           latitudeDelta: 0.04,
           longitudeDelta: 0.04,
         }}
-        scrollEnabled={false}
-        zoomEnabled={false}
+        scrollEnabled
+        zoomEnabled
         pitchEnabled={false}
         rotateEnabled={false}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        accessibilityLabel="Live delivery tracking map"
       >
         {/* Delivery destination */}
         <Marker coordinate={dest} title="Your location" pinColor={theme.colors.primary} />

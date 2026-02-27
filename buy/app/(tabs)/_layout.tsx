@@ -31,7 +31,11 @@ function Badge({ name, focused, count }: { name: string; focused: boolean; count
     <View>
       <Ionicons name={name as any} size={24} color={focused ? theme.colors.primary : '#999'} />
       {count && count > 0 ? (
-        <Animated.View style={[s.badge, badgeStyle]}>
+        <Animated.View
+          style={[s.badge, badgeStyle]}
+          accessibilityLiveRegion="polite"
+          accessibilityLabel={`${count} ${count === 1 ? 'item' : 'items'}`}
+        >
           <Text style={s.badgeTxt}>{count > 99 ? '99+' : count}</Text>
         </Animated.View>
       ) : null}

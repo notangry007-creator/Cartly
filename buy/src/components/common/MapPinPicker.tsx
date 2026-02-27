@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import { Text, Button, Surface } from 'react-native-paper';
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { theme, SPACING, RADIUS } from '../../theme';
@@ -69,6 +70,7 @@ export default function MapPinPicker({ visible, initialLat, initialLng, onConfir
           <MapView
             ref={mapRef}
             style={s.map}
+            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
             initialRegion={{
               latitude: pin.latitude,
               longitude: pin.longitude,

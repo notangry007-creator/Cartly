@@ -27,17 +27,30 @@ export default function WalletScreen() {
         <Ionicons name="wallet" size={40} color="#fff" />
         <Text variant="labelLarge" style={s.balLabel}>Available Balance</Text>
         <Text variant="displaySmall" style={s.balance}>{formatNPR(user?.walletBalance ?? 0)}</Text>
-        <Button
-          mode="contained-tonal"
-          onPress={() => router.push('/wallet/topup')}
-          icon="plus"
-          style={s.topupBtn}
-          textColor="#fff"
-          accessibilityRole="button"
-          accessibilityLabel="Add money to wallet"
-        >
-          Add Money
-        </Button>
+        <View style={s.walletActions}>
+          <Button
+            mode="contained-tonal"
+            onPress={() => router.push('/wallet/topup')}
+            icon="plus"
+            style={s.actionBtn}
+            textColor="#fff"
+            accessibilityRole="button"
+            accessibilityLabel="Add money to wallet"
+          >
+            Add Money
+          </Button>
+          <Button
+            mode="contained-tonal"
+            onPress={() => router.push('/wallet/withdraw')}
+            icon="arrow-up"
+            style={s.actionBtn}
+            textColor="#fff"
+            accessibilityRole="button"
+            accessibilityLabel="Withdraw money from wallet"
+          >
+            Withdraw
+          </Button>
+        </View>
       </Surface>
       <Text variant="labelSmall" style={s.txHeader}>TRANSACTION HISTORY</Text>
       {isLoading ? (
@@ -90,7 +103,8 @@ const s = StyleSheet.create({
   balCard: { margin: SPACING.md, borderRadius: RADIUS.xl, padding: SPACING.xxl, backgroundColor: theme.colors.primary, alignItems: 'center', gap: SPACING.sm },
   balLabel: { color: 'rgba(255,255,255,0.8)' },
   balance: { color: '#fff', fontWeight: '800' },
-  topupBtn: { marginTop: SPACING.sm, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: RADIUS.full },
+  walletActions: { flexDirection: 'row', gap: SPACING.sm, marginTop: SPACING.sm },
+  actionBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: RADIUS.full },
   txHeader: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, color: '#999', fontWeight: '700' },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   list: { paddingHorizontal: SPACING.md, gap: SPACING.sm, flexGrow: 1 },

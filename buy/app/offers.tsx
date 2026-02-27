@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Clipboard, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert, Share } from 'react-native';
 import { Text, Surface, Chip, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,8 +21,12 @@ export default function OffersScreen() {
   const { items: cartItems } = useCartStore();
   const [copied, setCopied] = useState<string | null>(null);
 
-  function copyCoupon(code: string) {
-    Clipboard.setString(code);
+  async function copyCoupon(code: string) {
+    // Use native Share as a fallback since @react-native-clipboard/clipboard is not installed
+    // This shares the coupon code via the native share sheet
+    try {
+      await Share.share({ message: code, title: `Coupon Code: ${code}` });
+    } catch {}
     setCopied(code);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     showSuccess(`Coupon code "${code}" copied!`);

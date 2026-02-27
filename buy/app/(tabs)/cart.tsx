@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList } from 'react-native';
-import { Text, Button, TextInput, Divider, Surface } from 'react-native-paper';
+import { Text, Button, TextInput, Divider, Surface, Snackbar } from 'react-native-paper';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,13 +26,39 @@ export default function CartScreen() {
   const insets = useSafeAreaInsets();
   const { applyCoupon: prefilledCoupon } = useLocalSearchParams<{ applyCoupon?: string }>();
   const { user } = useAuthStore();
-  const { items, updateQuantity, removeItem, isLoaded } = useCartStore();
+  const { items, updateQuantity, removeItem, addItem, isLoaded } = useCartStore();
   const { zoneId } = useZoneStore();
   const [couponCode, setCouponCode] = useState(prefilledCoupon ?? '');
   const [appliedCoupon, setAppliedCoupon] = useState<typeof COUPONS[0]|null>(null);
   const [couponError, setCouponError] = useState('');
   const zone = getZone(zoneId);
   const { showSuccess } = useToast();
+
+  // Undo deletion state
+  const [undoVisible, setUndoVisible] = useState(false);
+  const [deletedItem, setDeletedItem] = useState<{ productId: string; variantId: string; quantity: number; title: string } | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleRemoveItem(userId: string, productId: string, variantId: string, title: string, quantity: number) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    removeItem(userId, productId, variantId);
+    setDeletedItem({ productId, variantId, quantity, title });
+    setUndoVisible(true);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => {
+      setUndoVisible(false);
+      setDeletedItem(null);
+    }, 4000);
+  }
+
+  async function handleUndo() {
+    if (!user || !deletedItem) return;
+    await addItem(user.id, deletedItem.productId, deletedItem.variantId, deletedItem.quantity);
+    setUndoVisible(false);
+    setDeletedItem(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    showSuccess('Item restored to cart');
+  }
 
   // Auto-apply coupon if navigated from offers screen
   useEffect(() => {
@@ -75,7 +101,9 @@ export default function CartScreen() {
 
   const subtotal = resolved.reduce((sum,{item,variant})=>sum+(variant?.price??0)*item.quantity,0);
   const totalWeightKg = resolved.reduce((sum,{item,product})=>sum+(product?.weightKg??0.5)*item.quantity,0);
-  const shippingFee = calculateShippingFee(zoneId, 'standard', totalWeightKg);
+  // Use the best available delivery option for the zone (not hardcoded 'standard')
+  const bestDeliveryOption = zone.deliveryOptions[0] ?? 'standard';
+  const shippingFee = calculateShippingFee(zoneId, bestDeliveryOption, totalWeightKg);
   let discount = 0;
   if(appliedCoupon) {
     discount = appliedCoupon.type==='percent' ? Math.min(Math.round(subtotal*appliedCoupon.value/100),appliedCoupon.maxDiscount??Infinity) : appliedCoupon.value;
@@ -104,7 +132,7 @@ export default function CartScreen() {
           const renderRightActions = () => (
               <TouchableOpacity
                 style={s.swipeDelete}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeItem(user.id, item.productId, item.variantId); }}
+                onPress={() => handleRemoveItem(user.id, item.productId, item.variantId, product.title, item.quantity)}
               >
                 <Ionicons name="trash" size={22} color="#fff" />
                 <Text style={s.swipeDeleteTxt}>Delete</Text>
@@ -154,7 +182,7 @@ export default function CartScreen() {
               </View>
               <TouchableOpacity
                 style={s.removeBtn}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); removeItem(user.id, item.productId, item.variantId); }}
+                onPress={() => handleRemoveItem(user.id, item.productId, item.variantId, product.title, item.quantity)}
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${product.title} from cart`}
               >
@@ -179,7 +207,7 @@ export default function CartScreen() {
         <Surface style={s.section} elevation={1}>
           <Text variant="titleSmall" style={s.secTitle}>Price Details</Text>
           <PR label="Subtotal" value={subtotal}/>
-          <PR label={"Shipping ("+zone.name+")"} value={shippingFee}/>
+          <PR label={"Shipping ("+zone.name+", "+bestDeliveryOption.replace('_',' ')+")"} value={shippingFee}/>
           {discount>0&&<PR label={"Discount ("+appliedCoupon?.code+")"} value={-discount} green/>}
           <PR label="COD Fee (preview)" value={zone.codFee} note="if paying by cash"/>
           <Divider style={{marginVertical:SPACING.sm}}/>
@@ -192,6 +220,18 @@ export default function CartScreen() {
         <View><Text variant="titleMedium" style={s.checkTotal}>{formatNPR(total)}</Text><Text variant="labelSmall" style={s.checkSub}>{items.length} items</Text></View>
         <Button mode="contained" onPress={()=>router.push({pathname:'/checkout',params:{couponCode:appliedCoupon?.code??''}})} style={s.checkBtn} contentStyle={s.checkBtnC} accessibilityRole="button" accessibilityLabel={`Proceed to checkout, total ${formatNPR(total)}`}>Proceed to Checkout</Button>
       </View>
+
+      {/* Undo deletion snackbar */}
+      <Snackbar
+        visible={undoVisible}
+        onDismiss={() => { setUndoVisible(false); setDeletedItem(null); }}
+        duration={4000}
+        style={s.undoSnackbar}
+        wrapperStyle={{ bottom: insets.bottom + 70 }}
+        action={{ label: 'Undo', onPress: handleUndo, textColor: '#fff' }}
+      >
+        {deletedItem ? `"${deletedItem.title.slice(0, 20)}..." removed` : 'Item removed'}
+      </Snackbar>
     </View>
   );
 }
@@ -318,6 +358,7 @@ const s = StyleSheet.create({
   totalLabel:{fontWeight:'700',color:'#222'},
   totalVal:{fontWeight:'700',color:theme.colors.primary},
   codNote:{color:'#888',marginTop:4},
+  undoSnackbar:{backgroundColor:'#333',borderRadius:8},
   checkoutBar:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',backgroundColor:'#fff',paddingHorizontal:SPACING.lg,paddingTop:SPACING.md,borderTopWidth:1,borderTopColor:'#f0f0f0'},
   checkTotal:{fontWeight:'700',color:'#222'},
   checkSub:{color:'#888'},

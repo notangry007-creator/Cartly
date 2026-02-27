@@ -8,6 +8,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
+import { Video, ResizeMode } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useOrder } from '../../src/hooks/useOrders';
@@ -35,6 +36,7 @@ export default function ReviewScreen() {
   const { mutateAsync: addReview, isPending } = useAddReview();
   const { showSuccess, showError } = useToast();
   const [reviewPhotos, setReviewPhotos] = useState<string[]>([]);
+  const [reviewVideo, setReviewVideo] = useState<string | null>(null);
   const [currentProductIdx, setCurrentProductIdx] = useState(0);
   const [completedReviews, setCompletedReviews] = useState<string[]>([]);
 
@@ -53,6 +55,15 @@ export default function ReviewScreen() {
     if (!r.canceled) setReviewPhotos(p => [...p, r.assets[0].uri].slice(0, 4));
   }
 
+  async function pickVideo() {
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      quality: 0.7,
+      videoMaxDuration: 60, // 60 seconds max
+    });
+    if (!r.canceled) setReviewVideo(r.assets[0].uri);
+  }
+
   const onSubmit = async (data: F) => {
     if (!user || !currentItem) return;
     try {
@@ -63,6 +74,7 @@ export default function ReviewScreen() {
         rating: data.rating,
         comment: data.comment,
         images: reviewPhotos,
+        videoUri: reviewVideo ?? undefined,
         orderId,
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -177,6 +189,28 @@ export default function ReviewScreen() {
             )}
           </View>
 
+          {/* Video review */}
+          <Text variant="titleSmall" style={s.sectionTitle}>Add Video Review (optional, max 60s)</Text>
+          {reviewVideo ? (
+            <View style={s.videoWrap}>
+              <Video
+                source={{ uri: reviewVideo }}
+                style={s.video}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                isLooping={false}
+              />
+              <TouchableOpacity style={s.removeVideo} onPress={() => setReviewVideo(null)}>
+                <Ionicons name="close-circle" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={s.addVideo} onPress={pickVideo}>
+              <Ionicons name="videocam" size={24} color="#888" />
+              <Text variant="labelSmall" style={{ color: '#888' }}>Add video review</Text>
+            </TouchableOpacity>
+          )}
+
           <Button
             mode="contained"
             onPress={handleSubmit(onSubmit)}
@@ -216,5 +250,9 @@ const s = StyleSheet.create({
   photo: { width: 80, height: 80, borderRadius: RADIUS.md },
   removePhoto: { position: 'absolute', top: -6, right: -6 },
   addPhoto: { width: 80, height: 80, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: '#e0e0e0', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', gap: 4 },
+  videoWrap: { position: 'relative', borderRadius: RADIUS.md, overflow: 'hidden' },
+  video: { width: '100%', height: 200, backgroundColor: '#000', borderRadius: RADIUS.md },
+  removeVideo: { position: 'absolute', top: 8, right: 8 },
+  addVideo: { height: 80, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: '#e0e0e0', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', gap: 4, flexDirection: 'row' },
   submitBtn: { marginTop: SPACING.sm },
 });

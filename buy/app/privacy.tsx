@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, Surface, Divider, Switch, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useAuthStore } from '../src/stores/authStore';
 import ScreenHeader from '../src/components/common/ScreenHeader';
 import { theme, SPACING, RADIUS } from '../src/theme';
 import { useRouter } from 'expo-router';
+import { clearAuthToken } from '../src/utils/storage';
 
 interface PrivacySetting {
   id: string;
@@ -50,18 +51,35 @@ export default function PrivacyScreen() {
     await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(updated));
   }
 
-  function handleDeleteAccount() {
+  async function handleDeleteAccount() {
     Alert.alert(
       'Delete Account',
-      'This will permanently delete your account and all data. This cannot be undone.',
+      'This will permanently delete your account and ALL data including orders, addresses, wallet history, and reviews. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Delete Everything',
           style: 'destructive',
           onPress: async () => {
-            await logout();
-            router.replace('/(auth)/login');
+            try {
+              // 1. Clear auth tokens from SecureStore
+              await clearAuthToken();
+
+              // 2. Wipe ALL AsyncStorage keys belonging to this app
+              const allKeys = await AsyncStorage.getAllKeys();
+              const buyKeys = allKeys.filter(k => k.startsWith('buy_'));
+              if (buyKeys.length > 0) {
+                await AsyncStorage.multiRemove(buyKeys);
+              }
+
+              // 3. Clear auth state
+              await logout();
+
+              // 4. Navigate to login
+              router.replace('/(auth)/login');
+            } catch (e) {
+              Alert.alert('Error', 'Failed to delete account. Please try again.');
+            }
           },
         },
       ]
@@ -97,6 +115,23 @@ export default function PrivacyScreen() {
               {i < SETTINGS.length - 1 && <Divider style={styles.innerDivider} />}
             </React.Fragment>
           ))}
+        </Surface>
+
+        {/* Notification preferences note */}
+        <Surface style={styles.section} elevation={1}>
+          <Text variant="labelSmall" style={styles.sectionLabel}>HOW PREFERENCES ARE USED</Text>
+          <Divider />
+          <View style={styles.policyText}>
+            <Text variant="bodySmall" style={styles.policy}>
+              • <Text style={{ fontWeight: '600' }}>Order Update Notifications:</Text> When disabled, order status push notifications will not be scheduled.
+            </Text>
+            <Text variant="bodySmall" style={[styles.policy, { marginTop: SPACING.sm }]}>
+              • <Text style={{ fontWeight: '600' }}>Promotional Notifications:</Text> When disabled, promotional and offer notifications will be suppressed.
+            </Text>
+            <Text variant="bodySmall" style={[styles.policy, { marginTop: SPACING.sm }]}>
+              • <Text style={{ fontWeight: '600' }}>Personalised Recommendations:</Text> When disabled, recently viewed and wishlist sections will be hidden from the home feed.
+            </Text>
+          </View>
         </Surface>
 
         {/* Security */}
@@ -144,7 +179,7 @@ export default function PrivacyScreen() {
           <Divider />
           <View style={styles.dangerContent}>
             <Text variant="bodySmall" style={styles.dangerText}>
-              Deleting your account permanently removes all your data including orders, addresses, wallet history, and reviews.
+              Deleting your account permanently removes ALL your data including orders, addresses, wallet history, reviews, and preferences. This action cannot be undone.
             </Text>
             <Button
               mode="outlined"
@@ -153,7 +188,7 @@ export default function PrivacyScreen() {
               style={styles.deleteBtn}
               icon="trash"
             >
-              Delete My Account
+              Delete My Account & All Data
             </Button>
           </View>
         </Surface>

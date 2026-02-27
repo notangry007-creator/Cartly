@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OrderStatus } from '../types';
 
 // Configure how notifications appear when app is foregrounded
@@ -14,6 +15,19 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const PREFS_KEY = 'buy_privacy_prefs';
+
+async function getPrivacyPrefs(): Promise<Record<string, boolean>> {
+  try {
+    const raw = await AsyncStorage.getItem(PREFS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {
+    order_updates: true,
+    promo_notifications: false,
+  };
+}
+
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!Device.isDevice) return false; // Simulator/emulator
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -22,11 +36,21 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return status === 'granted';
 }
 
+export async function clearNotificationBadge(): Promise<void> {
+  try {
+    await Notifications.setBadgeCountAsync(0);
+  } catch {}
+}
+
 export async function scheduleOrderNotification(
   orderId: string,
   status: OrderStatus,
   delaySeconds: number = 0
 ): Promise<string | null> {
+  // Check privacy preference for order updates
+  const prefs = await getPrivacyPrefs();
+  if (!prefs.order_updates) return null;
+
   const messages: Partial<Record<OrderStatus, { title: string; body: string }>> = {
     confirmed: {
       title: '✅ Order Confirmed',
@@ -77,7 +101,37 @@ export async function scheduleOrderNotification(
         sound: true,
         badge: 1,
       },
-      trigger: delaySeconds > 0 ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: delaySeconds } : null,
+      trigger: delaySeconds > 0
+        ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: delaySeconds }
+        : null,
+    });
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+export async function schedulePromoNotification(
+  title: string,
+  body: string,
+  data?: Record<string, unknown>
+): Promise<string | null> {
+  // Check privacy preference for promo notifications
+  const prefs = await getPrivacyPrefs();
+  if (!prefs.promo_notifications) return null;
+
+  try {
+    const granted = await requestNotificationPermission();
+    if (!granted) return null;
+
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { ...data, type: 'promo' },
+        sound: true,
+      },
+      trigger: null,
     });
     return id;
   } catch {
