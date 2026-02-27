@@ -10,6 +10,7 @@ import { useOrderStore } from '@/src/stores/orderStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { usePayoutStore } from '@/src/stores/payoutStore';
 import { Colors } from '@/src/theme';
+import { supabase } from '@/src/lib/supabase';
 
 // Keep the splash screen visible until all stores are hydrated
 SplashScreen.preventAutoHideAsync();
@@ -39,6 +40,17 @@ export default function RootLayout() {
       }
     }
     init();
+
+    // Listen for Supabase auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_OUT') {
+        useAuthStore.setState({ seller: null });
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (!ready) return null;

@@ -5,7 +5,7 @@ import { PaperProvider } from 'react-native-paper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { useThemeStore } from '@/src/stores/themeStore';
@@ -17,10 +17,10 @@ import { useWishlistStore } from '@/src/stores/wishlistStore';
 import { useRecentlyViewedStore } from '@/src/stores/recentlyViewedStore';
 import { useNetworkStore } from '@/src/stores/networkStore';
 import { useTourStore } from '@/src/stores/tourStore';
-import { getAuthToken, getSavedUserId } from '@/src/utils/storage';
 import OfflineBanner from '@/src/components/common/OfflineBanner';
 import ErrorBoundary from '@/src/components/common/ErrorBoundary';
 import { ToastProvider } from '@/src/context/ToastContext';
+import { supabase } from '@/src/lib/supabase';
 
 // Keep splash visible while we initialize
 SplashScreen.preventAutoHideAsync();
@@ -43,7 +43,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { loadNotifications } = useNotificationStore();
   const { loadWishlist } = useWishlistStore();
   const { loadProducts: loadRecentlyViewed } = useRecentlyViewedStore();
-  const { loadTheme, currentTheme } = useThemeStore();
+  const { loadTheme } = useThemeStore();
   const { init: initNetwork } = useNetworkStore();
   const { loadTour } = useTourStore();
 
@@ -56,30 +56,43 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
     async function init() {
       try {
         await Promise.all([loadTheme(), loadZone(), loadTour()]);
-        const token = await getAuthToken();
-        if (token) {
-          const userId = await getSavedUserId();
-          if (userId) {
-            await Promise.all([
-              loadUser(userId),
-              loadCart(userId),
-              loadNotifications(userId),
-              loadWishlist(userId),
-            ]);
-          }
+
+        // Use Supabase session instead of local SecureStore token
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          const userId = session.user.id;
+          await Promise.all([
+            loadUser(userId),
+            loadCart(userId),
+            loadNotifications(userId),
+            loadWishlist(userId),
+          ]);
         }
       } catch (e) {
         console.warn('[AppInit]', e);
       } finally {
         setReady(true);
-        // Hide splash only after stores are hydrated — no white flash
         await SplashScreen.hideAsync();
       }
     }
     init();
+
+    // Listen for auth state changes (sign-in / sign-out)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await loadUser(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        // authStore.logout() already clears state
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  if (!ready) return null; // Splash screen covers this gap
+  if (!ready) return null;
 
   return (
     <View style={{ flex: 1 }}>

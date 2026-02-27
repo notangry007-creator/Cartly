@@ -1,28 +1,29 @@
 import { create } from 'zustand';
 import { User, Address } from '../types';
-import {
-  clearAuthToken,
-  getItem,
-  saveAuthToken,
-  saveUserId,
-  setItem,
-  STORAGE_KEYS,
-} from '../utils/storage';
-import { v4 as uuid } from 'uuid';
+import { supabase } from '../lib/supabase';
 import { DEMO_ADDRESSES } from '../data/seed';
 
 // ---------------------------------------------------------------------------
-// Serialisation queue — prevents interleaved read-modify-write on the shared
-// USERS array.  All mutations that touch the array are chained through this
-// promise so they always see the latest committed state.
+// Helper — map Supabase profile row → app User type
 // ---------------------------------------------------------------------------
-let _usersMutex: Promise<void> = Promise.resolve();
-
-function enqueueUsersMutation(fn: () => Promise<void>): Promise<void> {
-  const next = _usersMutex.then(fn);
-  // Swallow errors on the chain so a failed mutation doesn't block the queue.
-  _usersMutex = next.catch(() => {});
-  return next;
+function rowToUser(row: {
+  id: string;
+  phone: string;
+  name: string;
+  email: string | null;
+  avatar_url: string | null;
+  wallet_balance: number;
+  created_at: string;
+}): User {
+  return {
+    id: row.id,
+    phone: row.phone,
+    name: row.name,
+    email: row.email ?? undefined,
+    avatarUrl: row.avatar_url ?? undefined,
+    walletBalance: row.wallet_balance,
+    createdAt: row.created_at,
+  };
 }
 
 interface AuthState {
@@ -42,122 +43,144 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   isAuthenticated: false,
 
+  // ── loadUser ──────────────────────────────────────────────────────────────
   loadUser: async (userId) => {
-    const users = (await getItem<User[]>(STORAGE_KEYS.USERS)) ?? [];
-    const user = users.find(u => u.id === userId) ?? null;
-    set({ user, isAuthenticated: !!user });
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (error || !data) {
+      set({ user: null, isAuthenticated: false });
+      return;
+    }
+    set({ user: rowToUser(data), isAuthenticated: true });
   },
 
+  // ── login ─────────────────────────────────────────────────────────────────
+  // Uses Supabase Phone OTP auth. The OTP screen calls supabase.auth.verifyOtp()
+  // before this; here we upsert the profile row and seed demo addresses.
   login: async (phone, name, email) => {
     set({ isLoading: true });
     try {
-      let finalUser: User | null = null;
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-      await enqueueUsersMutation(async () => {
-        let users = (await getItem<User[]>(STORAGE_KEYS.USERS)) ?? [];
-        let user = users.find(u => u.phone === phone);
+      if (authError || !authUser) throw new Error('Not authenticated with Supabase');
 
-        if (!user) {
-          user = {
-            id: uuid(),
+      // Upsert profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: authUser.id,
             phone,
             name,
-            email,
-            walletBalance: 500,
-            createdAt: new Date().toISOString(),
-          };
-          users.push(user);
-          await setItem(STORAGE_KEYS.USERS, users);
+            email: email ?? null,
+            wallet_balance: 500,
+          },
+          { onConflict: 'id', ignoreDuplicates: false },
+        )
+        .select()
+        .single();
 
-          // Seed default addresses for new user
-          const addrKey = `${STORAGE_KEYS.ADDRESSES}_${user.id}`;
-          const existingAddrs = await getItem<Address[]>(addrKey);
-          if (!existingAddrs || existingAddrs.length === 0) {
-            const seeded: Address[] = DEMO_ADDRESSES.map((a, i) => ({
-              ...a,
-              id: uuid(),
-              userId: user!.id,
-              isDefault: i === 0,
-            }));
-            await setItem(addrKey, seeded);
-          }
-        } else if (name) {
-          user = { ...user, name, email: email ?? user.email };
-          users = users.map(u => (u.id === user!.id ? user! : u));
-          await setItem(STORAGE_KEYS.USERS, users);
-        }
+      if (profileError || !profile) throw profileError ?? new Error('Profile upsert failed');
 
-        finalUser = user;
-      });
+      // Seed demo addresses for brand-new users
+      const { count } = await supabase
+        .from('addresses')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', authUser.id);
 
-      if (!finalUser) throw new Error('Login failed');
-      await saveAuthToken('sim_' + uuid());
-      await saveUserId((finalUser as User).id);
-      set({ user: finalUser, isAuthenticated: true, isLoading: false });
+      if ((count ?? 0) === 0) {
+        const seeded: Address[] = DEMO_ADDRESSES.map((a, i) => ({
+          ...a,
+          id: crypto.randomUUID(),
+          userId: authUser.id,
+          isDefault: i === 0,
+        }));
+        await supabase.from('addresses').insert(
+          seeded.map(a => ({
+            id: a.id,
+            user_id: a.userId,
+            label: a.label,
+            province: a.province,
+            district: a.district,
+            municipality: a.municipality,
+            ward: a.ward,
+            street: a.street ?? null,
+            landmark: a.landmark,
+            latitude: a.latitude,
+            longitude: a.longitude,
+            is_pickup_point_fallback: a.isPickupPointFallback,
+            is_default: a.isDefault,
+          })),
+        );
+      }
+
+      set({ user: rowToUser(profile), isAuthenticated: true, isLoading: false });
     } catch (e) {
       set({ isLoading: false });
       throw e;
     }
   },
 
+  // ── updateProfile ─────────────────────────────────────────────────────────
   updateProfile: async (partial) => {
     const { user } = get();
     if (!user) return;
 
-    await enqueueUsersMutation(async () => {
-      // Re-read the latest users array inside the queue to avoid overwriting
-      // concurrent changes made by creditWallet / debitWallet.
-      const users = (await getItem<User[]>(STORAGE_KEYS.USERS)) ?? [];
-      const current = users.find(u => u.id === user.id);
-      if (!current) return;
-      const updated: User = { ...current, ...partial };
-      await setItem(
-        STORAGE_KEYS.USERS,
-        users.map(u => (u.id === user.id ? updated : u)),
-      );
-      set({ user: updated });
-    });
+    const updates: Record<string, unknown> = {};
+    if (partial.name !== undefined) updates.name = partial.name;
+    if (partial.email !== undefined) updates.email = partial.email ?? null;
+    if (partial.avatarUrl !== undefined) updates.avatar_url = partial.avatarUrl ?? null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (!error && data) set({ user: rowToUser(data) });
   },
 
+  // ── creditWallet ──────────────────────────────────────────────────────────
   creditWallet: async (amount) => {
     const { user } = get();
     if (!user) return;
 
-    await enqueueUsersMutation(async () => {
-      const users = (await getItem<User[]>(STORAGE_KEYS.USERS)) ?? [];
-      const current = users.find(u => u.id === user.id);
-      if (!current) return;
-      const updated: User = { ...current, walletBalance: current.walletBalance + amount };
-      await setItem(
-        STORAGE_KEYS.USERS,
-        users.map(u => (u.id === user.id ? updated : u)),
-      );
-      set({ user: updated });
-    });
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ wallet_balance: user.walletBalance + amount })
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (!error && data) set({ user: rowToUser(data) });
   },
 
+  // ── debitWallet ───────────────────────────────────────────────────────────
   debitWallet: async (amount) => {
     const { user } = get();
     if (!user) return;
 
-    await enqueueUsersMutation(async () => {
-      const users = (await getItem<User[]>(STORAGE_KEYS.USERS)) ?? [];
-      const current = users.find(u => u.id === user.id);
-      if (!current) return;
-      const updated: User = {
-        ...current,
-        walletBalance: Math.max(0, current.walletBalance - amount),
-      };
-      await setItem(
-        STORAGE_KEYS.USERS,
-        users.map(u => (u.id === user.id ? updated : u)),
-      );
-      set({ user: updated });
-    });
+    const newBalance = Math.max(0, user.walletBalance - amount);
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ wallet_balance: newBalance })
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (!error && data) set({ user: rowToUser(data) });
   },
 
+  // ── logout ────────────────────────────────────────────────────────────────
   logout: async () => {
-    await clearAuthToken();
+    await supabase.auth.signOut();
     set({ user: null, isAuthenticated: false });
   },
 }));

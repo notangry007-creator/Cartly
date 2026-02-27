@@ -29,12 +29,19 @@ sell/android/
 # EAS
 .eas/
 
-# Environment
+# Environment — never commit real credentials
 .env
 .env.local
 .env*.local
-buy/.env*
-sell/.env*
+buy/.env
+buy/.env.local
+buy/.env*.local
+sell/.env
+sell/.env.local
+sell/.env*.local
+admin/.env
+admin/.env.local
+admin/.env*.local
 
 # OS
 .DS_Store
