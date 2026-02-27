@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { theme, SPACING } from '../../theme';
@@ -48,8 +48,11 @@ export default class ErrorBoundary extends Component<Props, State> {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xxl, gap: SPACING.md, backgroundColor: '#fff' },
-  title: { fontWeight: '700', color: '#222', textAlign: 'center' },
-  sub: { color: '#888', textAlign: 'center', lineHeight: 20 },
+  // backgroundColor is intentionally omitted — ErrorBoundary inherits the
+  // parent background so it works on both light and dark screens.
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xxl, gap: SPACING.md },
+  // Colors left intentionally neutral — Paper Text inherits theme text colour.
+  title: { fontWeight: '700', textAlign: 'center' },
+  sub: { textAlign: 'center', lineHeight: 20 },
   btn: { marginTop: SPACING.sm },
 });

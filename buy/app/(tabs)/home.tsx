@@ -3,7 +3,7 @@ import {
   View, StyleSheet, TouchableOpacity, FlatList,
   Dimensions, RefreshControl, ScrollView,
 } from 'react-native';
-import { Text, Searchbar, Surface } from 'react-native-paper';
+import { Text, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,52 +13,19 @@ import { useRecentlyViewedStore } from '@/src/stores/recentlyViewedStore';
 import { useWishlistStore } from '@/src/stores/wishlistStore';
 import { useProducts, useCategories } from '@/src/hooks/useProducts';
 import { PRODUCTS } from '@/src/data/seed';
-import { ZONES } from '@/src/data/zones';
 import { BANNERS } from '@/src/data/seed';
+import { ZONES } from '@/src/data/zones';
 import { IMG } from '@/src/data/images';
 import { requestNotificationPermission } from '@/src/utils/pushNotifications';
-import * as Haptics from 'expo-haptics';
-import ProductCard from '@/src/components/common/ProductCard';
 import CachedImage from '@/src/components/common/CachedImage';
-import { BannerSkeleton, ProductRowSkeleton } from '@/src/components/common/SkeletonLoader';
-import { theme, SPACING, RADIUS } from '@/src/theme';
-import { ZoneId, Product } from '@/src/types';
+import SectionHeader from '@/src/components/common/SectionHeader';
+import HorizontalProductList from '@/src/components/common/HorizontalProductList';
+import ZonePicker from '@/src/components/common/ZonePicker';
+import { BannerSkeleton } from '@/src/components/common/SkeletonLoader';
+import { theme, SPACING, RADIUS, useAppColors } from '@/src/theme';
+import { ZoneId } from '@/src/types';
 
 const { width: W } = Dimensions.get('window');
-
-// ─── Section Header ─────────────────────────────────────────────────────────
-function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll?: () => void }) {
-  return (
-    <View style={sh.row}>
-      <Text variant="titleMedium" style={sh.title}>{title}</Text>
-      {onSeeAll && (
-        <TouchableOpacity onPress={onSeeAll} hitSlop={8}>
-          <Text variant="labelMedium" style={sh.all}>See All</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-const sh = StyleSheet.create({
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, marginTop: SPACING.lg, marginBottom: SPACING.sm },
-  title: { fontWeight: '700', color: '#222' },
-  all: { color: theme.colors.primary },
-});
-
-// ─── Horizontal product row ──────────────────────────────────────────────────
-function HorizontalProducts({ data, zoneId, isLoading }: { data?: Product[]; zoneId: ZoneId; isLoading: boolean }) {
-  const router = useRouter();
-  if (isLoading) return <ProductRowSkeleton count={3} />;
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.md }}>
-      {(data ?? []).slice(0, 8).map(item => (
-        <View key={item.id} style={{ width: 160 }}>
-          <ProductCard product={item} zoneId={zoneId} onPress={() => router.push(`/product/${item.id}`)} />
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
 
 // ─── Home Screen ─────────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -66,10 +33,11 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const { zoneId, setZone } = useZoneStore();
+  const c = useAppColors();
   const [refreshing, setRefreshing] = useState(false);
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
-  const bannerScrollRef = useRef<any>(null);
+  const bannerScrollRef = useRef<ScrollView>(null);
 
   // Request notification permission once on first home mount
   useEffect(() => {
@@ -187,7 +155,7 @@ export default function HomeScreen() {
                         <Surface style={s.catImgWrap} elevation={1}>
                           <CachedImage uri={imgData?.uri ?? cat.imageUrl} blurhash={imgData?.blurhash} style={s.catImg} />
                         </Surface>
-                        <Text variant="labelSmall" style={s.catLabel} numberOfLines={1}>{cat.name}</Text>
+                         <Text variant="labelSmall" style={[s.catLabel, { color: c.textSecondary }]} numberOfLines={1}>{cat.name}</Text>
                       </TouchableOpacity>
                     );
                   })
@@ -200,7 +168,7 @@ export default function HomeScreen() {
         return (
           <>
             <SectionHeader title="🕐 Recently Viewed" />
-            <HorizontalProducts data={recentProducts.slice(0, 8)} zoneId={zoneId} isLoading={false} />
+            <HorizontalProductList data={recentProducts} zoneId={zoneId} isLoading={false} />
           </>
         );
 
@@ -208,7 +176,7 @@ export default function HomeScreen() {
         return (
           <>
             <SectionHeader title="❤️ Your Wishlist" onSeeAll={() => router.push('/wishlist')} />
-            <HorizontalProducts data={wishlistProducts.slice(0, 8)} zoneId={zoneId} isLoading={false} />
+            <HorizontalProductList data={wishlistProducts} zoneId={zoneId} isLoading={false} />
           </>
         );
 
@@ -216,7 +184,7 @@ export default function HomeScreen() {
         return (
           <>
             <SectionHeader title="⚡ Fast Delivery" onSeeAll={() => router.push({ pathname: '/search', params: { fastDelivery: '1' } })} />
-            <HorizontalProducts data={fastProducts} zoneId={zoneId} isLoading={loadingFast} />
+            <HorizontalProductList data={fastProducts} zoneId={zoneId} isLoading={loadingFast} />
           </>
         );
 
@@ -224,7 +192,7 @@ export default function HomeScreen() {
         return (
           <>
             <SectionHeader title="✅ Verified Sellers" onSeeAll={() => router.push({ pathname: '/search', params: { verified: '1' } })} />
-            <HorizontalProducts data={verifiedProducts} zoneId={zoneId} isLoading={loadingVerified} />
+            <HorizontalProductList data={verifiedProducts} zoneId={zoneId} isLoading={loadingVerified} />
           </>
         );
 
@@ -232,7 +200,7 @@ export default function HomeScreen() {
         return (
           <>
             <SectionHeader title="🔥 Top Deals" onSeeAll={() => router.push({ pathname: '/search', params: { sort: 'price_asc' } })} />
-            <HorizontalProducts data={dealProducts} zoneId={zoneId} isLoading={loadingDeals} />
+            <HorizontalProductList data={dealProducts} zoneId={zoneId} isLoading={loadingDeals} />
             <View style={{ height: SPACING.xl }} />
           </>
         );
@@ -243,9 +211,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={[s.container, { paddingTop: insets.top }]}>
+    <View style={[s.container, { paddingTop: insets.top, backgroundColor: c.screenBg }]}>
       {/* Sticky top bar */}
-      <View style={s.topBar}>
+      <View style={[s.topBar, { backgroundColor: c.cardBg }]}>
         <TouchableOpacity
           style={s.zoneBtn}
           onPress={() => setShowZonePicker(true)}
@@ -253,8 +221,8 @@ export default function HomeScreen() {
           accessibilityLabel={`Current delivery zone: ${curZone?.name ?? 'Select Zone'}. Tap to change`}
         >
           <Ionicons name="location" size={16} color={theme.colors.primary} accessibilityElementsHidden />
-          <Text variant="labelMedium" style={s.zoneName} numberOfLines={1}>{curZone?.name ?? 'Select Zone'}</Text>
-          <Ionicons name="chevron-down" size={14} color="#666" accessibilityElementsHidden />
+          <Text variant="labelMedium" style={[s.zoneName, { color: c.textSecondary }]} numberOfLines={1}>{curZone?.name ?? 'Select Zone'}</Text>
+          <Ionicons name="chevron-down" size={14} color={c.textMuted} accessibilityElementsHidden />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => router.push('/notifications')}
@@ -262,22 +230,22 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Notifications"
         >
-          <Ionicons name="notifications-outline" size={22} color="#333" accessibilityElementsHidden />
+          <Ionicons name="notifications-outline" size={22} color={c.text} accessibilityElementsHidden />
         </TouchableOpacity>
       </View>
 
       {/* Search bar tap target */}
       <TouchableOpacity
         onPress={() => router.push('/search')}
-        style={s.searchWrap}
+        style={[s.searchWrap, { backgroundColor: c.cardBg }]}
         activeOpacity={0.85}
         accessibilityRole="search"
         accessibilityLabel="Search products"
         accessibilityHint="Tap to open search"
       >
-        <View style={s.searchFake}>
-          <Ionicons name="search" size={18} color="#999" />
-          <Text style={s.searchPlaceholder}>Search products...</Text>
+        <View style={[s.searchFake, { backgroundColor: c.screenBg }]}>
+          <Ionicons name="search" size={18} color={c.textMuted} />
+          <Text style={[s.searchPlaceholder, { color: c.textMuted }]}>Search products...</Text>
         </View>
       </TouchableOpacity>
 
@@ -295,40 +263,24 @@ export default function HomeScreen() {
 
       {/* Zone picker overlay */}
       {showZonePicker && (
-        <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={() => setShowZonePicker(false)}>
-          <TouchableOpacity style={s.zoneModal} activeOpacity={1} onPress={e => e.stopPropagation()}>
-            <Text variant="titleMedium" style={s.zoneModalTitle}>Select Delivery Zone</Text>
-            {ZONES.map(zone => (
-              <TouchableOpacity
-                key={zone.id}
-                style={[s.zoneOpt, zoneId === zone.id && s.zoneOptA]}
-                onPress={async () => { await setZone(zone.id as ZoneId); setShowZonePicker(false); Haptics.selectionAsync(); }}
-                accessibilityRole="radio"
-                accessibilityLabel={`${zone.name}, ${zone.codAvailable ? 'COD available' : 'Prepaid only'}`}
-                accessibilityState={{ checked: zoneId === zone.id }}
-              >
-                <Ionicons name={zoneId === zone.id ? 'radio-button-on' : 'radio-button-off'} size={18} color={zoneId === zone.id ? theme.colors.primary : '#ccc'} />
-                <View style={{ marginLeft: SPACING.sm }}>
-                  <Text variant="bodyMedium" style={s.zoneOptName}>{zone.name}</Text>
-                  <Text variant="labelSmall" style={s.zoneOptSub}>{zone.codAvailable ? 'COD available' : 'Prepaid only'}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </TouchableOpacity>
-        </TouchableOpacity>
+        <ZonePicker
+          currentZoneId={zoneId}
+          onSelect={setZone}
+          onDismiss={() => setShowZonePicker(false)}
+        />
       )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, backgroundColor: '#fff' },
+  container: { flex: 1 },
+  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm },
   zoneBtn: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 4 },
-  zoneName: { color: '#333', fontWeight: '600', flex: 1 },
-  searchWrap: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, backgroundColor: '#fff', paddingBottom: SPACING.sm },
-  searchFake: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, backgroundColor: '#f5f5f5', borderRadius: RADIUS.full, paddingHorizontal: SPACING.md, paddingVertical: 10 },
-  searchPlaceholder: { color: '#999', fontSize: 15, flex: 1 },
+  zoneName: { fontWeight: '600', flex: 1 },
+  searchWrap: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, paddingBottom: SPACING.sm },
+  searchFake: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, borderRadius: RADIUS.full, paddingHorizontal: SPACING.md, paddingVertical: 10 },
+  searchPlaceholder: { fontSize: 15, flex: 1 },
   banner: { width: W - SPACING.lg * 2, height: 160, marginHorizontal: SPACING.lg, borderRadius: RADIUS.lg, overflow: 'hidden' },
   bannerImg: { width: '100%', height: '100%' },
   bannerOvl: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', padding: SPACING.md },
@@ -341,12 +293,5 @@ const s = StyleSheet.create({
   catItem: { alignItems: 'center', width: 70 },
   catImgWrap: { borderRadius: 999, overflow: 'hidden', marginBottom: 4 },
   catImg: { width: 56, height: 56, borderRadius: 999 },
-  catLabel: { color: '#444', textAlign: 'center', lineHeight: 14 },
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  zoneModal: { backgroundColor: '#fff', borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACING.xl, gap: SPACING.sm },
-  zoneModalTitle: { fontWeight: '700', marginBottom: SPACING.sm },
-  zoneOpt: { flexDirection: 'row', alignItems: 'center', padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: '#e0e0e0' },
-  zoneOptA: { borderColor: theme.colors.primary, backgroundColor: '#FFF5F5' },
-  zoneOptName: { fontWeight: '600', color: '#222' },
-  zoneOptSub: { color: '#888' },
+  catLabel: { textAlign: 'center', lineHeight: 14 },
 });
