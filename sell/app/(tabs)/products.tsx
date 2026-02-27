@@ -35,7 +35,7 @@ export default function ProductsScreen() {
   });
 
   function confirmDelete(product: Product) {
-    Alert.alert('Delete Product', `Are you sure you want to delete "${product.name}"?`, [
+    Alert.alert('Delete Product', `Are you sure you want to delete "${product.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => deleteProduct(product.id) },
     ]);
@@ -102,15 +102,15 @@ export default function ProductsScreen() {
           <TouchableOpacity style={styles.card} onPress={() => router.push(`/product/${product.id}` as any)}>
             <Image source={{ uri: product.images[0] }} style={styles.image} contentFit="cover" />
             <View style={styles.cardInfo}>
-              <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+              <Text style={styles.productName} numberOfLines={2}>{product.title}</Text>
               <ProductStatusBadge status={product.status} />
               <View style={styles.priceRow}>
-                <Text style={styles.price}>{formatNPR(product.price)}</Text>
-                {product.comparePrice && (
-                  <Text style={styles.comparePrice}>{formatNPR(product.comparePrice)}</Text>
-                )}
+                <Text style={styles.price}>{formatNPR(product.basePrice)}</Text>
+                {product.baseMrp > product.basePrice && (
+                   <Text style={styles.comparePrice}>{formatNPR(product.baseMrp)}</Text>
+                 )}
               </View>
-              <Text style={styles.stockText}>Stock: {product.stock} · Sold: {product.totalSold}</Text>
+              <Text style={styles.stockText}>Stock: {product.variants[0]?.stock ?? 0} · Sold: {product.totalSold}</Text>
             </View>
             <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(product)} hitSlop={8}>
               <Ionicons name="trash-outline" size={20} color={Colors.danger} />

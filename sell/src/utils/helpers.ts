@@ -27,10 +27,14 @@ export function orderStatusLabel(status: OrderStatus): string {
   const map: Record<OrderStatus, string> = {
     pending: 'Pending',
     confirmed: 'Confirmed',
-    processing: 'Processing',
+    packed: 'Packed',
     shipped: 'Shipped',
+    out_for_delivery: 'Out for Delivery',
     delivered: 'Delivered',
     cancelled: 'Cancelled',
+    return_requested: 'Return Requested',
+    return_approved: 'Return Approved',
+    return_picked: 'Return Picked',
     refunded: 'Refunded',
   };
   return map[status];
@@ -40,10 +44,14 @@ export function orderStatusColor(status: OrderStatus): string {
   const map: Record<OrderStatus, string> = {
     pending: Colors.statusPending,
     confirmed: Colors.statusConfirmed,
-    processing: Colors.statusProcessing,
+    packed: Colors.statusProcessing,
     shipped: Colors.statusShipped,
+    out_for_delivery: Colors.statusShipped,
     delivered: Colors.statusDelivered,
     cancelled: Colors.statusCancelled,
+    return_requested: Colors.warning,
+    return_approved: Colors.info,
+    return_picked: Colors.info,
     refunded: Colors.statusRefunded,
   };
   return map[status];

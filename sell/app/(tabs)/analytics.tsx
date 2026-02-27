@@ -15,8 +15,10 @@ type Period = (typeof PERIODS)[number];
 const ORDER_STATUSES = [
   { label: 'Delivered', key: 'delivered' as const, color: Colors.statusDelivered },
   { label: 'Shipped', key: 'shipped' as const, color: Colors.statusShipped },
+  { label: 'Packed', key: 'packed' as const, color: Colors.statusProcessing },
   { label: 'Confirmed', key: 'confirmed' as const, color: Colors.statusConfirmed },
   { label: 'Pending', key: 'pending' as const, color: Colors.statusPending },
+  { label: 'Returns', key: 'return_requested' as const, color: Colors.warning },
   { label: 'Cancelled', key: 'cancelled' as const, color: Colors.statusCancelled },
 ];
 

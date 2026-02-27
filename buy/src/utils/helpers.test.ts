@@ -185,7 +185,7 @@ describe('getETA', () => {
   });
 
   it('returns fallback string for unknown zone/option', () => {
-    expect(getETA('unknown_zone', 'same_day')).toBe('Check availability');
+    expect(getETA('unknown_zone' as any, 'same_day')).toBe('Check availability');
   });
 });
 
@@ -232,7 +232,7 @@ describe('getBestETA', () => {
 
   it('returns "Not available" when no options exist', () => {
     // Create a product in a zone that has no matching delivery options
-    const result = getBestETA({ ...base, isFastDelivery: false }, 'unknown_zone');
+    const result = getBestETA({ ...base, isFastDelivery: false }, 'unknown_zone' as any);
     expect(result).toBe('Not available');
   });
 

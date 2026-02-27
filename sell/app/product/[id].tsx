@@ -60,7 +60,7 @@ export default function ProductDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="arrow-back" size={22} color={Colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{product.name}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{product.title}</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={() => router.push(`/product/edit/${product.id}` as any)} hitSlop={8}>
             <Ionicons name="create-outline" size={22} color={Colors.white} />
@@ -81,7 +81,7 @@ export default function ProductDetailScreen() {
 
         {/* Info */}
         <View style={styles.section}>
-          <Text style={styles.productName}>{product.name}</Text>
+          <Text style={styles.productName}>{product.title}</Text>
           <View style={styles.row}>
             <ProductStatusBadge status={product.status} />
             <Text style={styles.sku}>SKU: {product.sku}</Text>
@@ -93,14 +93,14 @@ export default function ProductDetailScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Pricing</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{formatNPR(product.price)}</Text>
-            {product.comparePrice && (
-              <Text style={styles.comparePrice}>{formatNPR(product.comparePrice)}</Text>
+            <Text style={styles.price}>{formatNPR(product.basePrice)}</Text>
+            {product.baseMrp > product.basePrice && (
+              <Text style={styles.comparePrice}>{formatNPR(product.baseMrp)}</Text>
             )}
           </View>
-          {product.comparePrice && (
+          {product.baseMrp > product.basePrice && (
             <Text style={styles.discount}>
-              {Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}% off
+              {Math.round(((product.baseMrp - product.basePrice) / product.baseMrp) * 100)}% off
             </Text>
           )}
         </View>
@@ -110,7 +110,7 @@ export default function ProductDetailScreen() {
           <Text style={styles.cardTitle}>Inventory</Text>
           <View style={styles.statsGrid}>
             {[
-              { label: 'In Stock', value: product.stock },
+              { label: 'In Stock', value: product.variants[0]?.stock ?? 0 },
               { label: 'Total Sold', value: product.totalSold },
               { label: 'Views', value: product.views },
             ].map((s) => (

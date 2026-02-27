@@ -36,6 +36,21 @@ export default function EditProductScreen() {
     }
   }
 
+  // Map Product → ProductFormData for the form
+  const defaultVariant = product.variants[0];
+  const initialValues = {
+    title: product.title,
+    description: product.description,
+    price: defaultVariant?.price ?? product.basePrice,
+    mrp: defaultVariant?.mrp ?? product.baseMrp,
+    sku: defaultVariant?.sku ?? '',
+    stock: defaultVariant?.stock ?? 0,
+    categoryId: product.categoryId,
+    tags: product.tags,
+    images: product.images,
+    status: product.status,
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -46,7 +61,7 @@ export default function EditProductScreen() {
         <View style={{ width: 22 }} />
       </View>
       <ProductForm
-        initialValues={product}
+        initialValues={initialValues}
         onSubmit={handleSubmit}
         submitLabel="Save Changes"
         isLoading={isLoading}

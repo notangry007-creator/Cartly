@@ -7,14 +7,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOrderStore } from '@/src/stores/orderStore';
 import OrderStatusBadge from '@/src/components/common/OrderStatusBadge';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
-import { formatNPR, formatDateTime } from '@/src/utils/helpers';
+import { formatNPR, formatDateTime, orderStatusLabel } from '@/src/utils/helpers';
 import { OrderStatus } from '@/src/types';
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   pending: 'confirmed',
-  confirmed: 'processing',
-  processing: 'shipped',
-  shipped: 'delivered',
+  confirmed: 'packed',
+  packed: 'shipped',
+  shipped: 'out_for_delivery',
+  out_for_delivery: 'delivered',
+  return_requested: 'return_approved',
+  return_approved: 'return_picked',
+  return_picked: 'refunded',
 };
 
 export default function OrderDetailScreen() {
@@ -91,7 +95,7 @@ export default function OrderDetailScreen() {
             <View key={idx} style={styles.itemRow}>
               <Image source={{ uri: item.productImage }} style={styles.itemImage} contentFit="cover" />
               <View style={styles.itemInfo}>
-                <Text style={styles.itemName} numberOfLines={2}>{item.productName}</Text>
+                <Text style={styles.itemName} numberOfLines={2}>{item.title}</Text>
                 <Text style={styles.itemQty}>Qty: {item.quantity} × {formatNPR(item.price)}</Text>
               </View>
               <Text style={styles.itemTotal}>{formatNPR(item.quantity * item.price)}</Text>
@@ -117,15 +121,17 @@ export default function OrderDetailScreen() {
         </View>
 
         {/* Actions */}
-        {(nextStatus || order.status === 'pending' || order.status === 'confirmed') && (
+        {(nextStatus || ['pending', 'confirmed', 'packed'].includes(order.status)) && (
           <View style={styles.actionsWrap}>
             {nextStatus && (
               <TouchableOpacity style={styles.primaryBtn} onPress={handleAdvanceStatus}>
                 <Ionicons name="arrow-forward-circle-outline" size={20} color={Colors.white} />
-                <Text style={styles.primaryBtnText}>Mark as {nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1)}</Text>
+                <Text style={styles.primaryBtnText}>
+                  Mark as {orderStatusLabel(nextStatus)}
+                </Text>
               </TouchableOpacity>
             )}
-            {(order.status === 'pending' || order.status === 'confirmed') && (
+            {(['pending', 'confirmed', 'packed'] as const).includes(order.status as any) && (
               <TouchableOpacity style={styles.dangerBtn} onPress={handleCancel}>
                 <Ionicons name="close-circle-outline" size={20} color={Colors.danger} />
                 <Text style={styles.dangerBtnText}>Cancel Order</Text>

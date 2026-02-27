@@ -32,10 +32,14 @@ describe('orderStatusLabel', () => {
   it('returns correct labels', () => {
     expect(orderStatusLabel('pending')).toBe('Pending');
     expect(orderStatusLabel('confirmed')).toBe('Confirmed');
-    expect(orderStatusLabel('processing')).toBe('Processing');
+    expect(orderStatusLabel('packed')).toBe('Packed');
     expect(orderStatusLabel('shipped')).toBe('Shipped');
+    expect(orderStatusLabel('out_for_delivery')).toBe('Out for Delivery');
     expect(orderStatusLabel('delivered')).toBe('Delivered');
     expect(orderStatusLabel('cancelled')).toBe('Cancelled');
+    expect(orderStatusLabel('return_requested')).toBe('Return Requested');
+    expect(orderStatusLabel('return_approved')).toBe('Return Approved');
+    expect(orderStatusLabel('return_picked')).toBe('Return Picked');
     expect(orderStatusLabel('refunded')).toBe('Refunded');
   });
 });

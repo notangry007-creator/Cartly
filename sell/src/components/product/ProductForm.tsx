@@ -9,9 +9,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '../../theme';
 import { ProductFormData, ProductStatus } from '../../types';
 
-const CATEGORIES = [
-  'Electronics', 'Computers', 'Accessories', 'Home & Office',
-  'Clothing', 'Books', 'Sports', 'Other',
+const CATEGORIES: { id: string; label: string }[] = [
+  { id: 'cat_electronics', label: 'Electronics' },
+  { id: 'cat_computers', label: 'Computers' },
+  { id: 'cat_accessories', label: 'Accessories' },
+  { id: 'cat_home', label: 'Home & Office' },
+  { id: 'cat_clothing', label: 'Clothing' },
+  { id: 'cat_books', label: 'Books' },
+  { id: 'cat_sports', label: 'Sports' },
+  { id: 'cat_other', label: 'Other' },
 ];
 
 interface Props {
@@ -22,15 +28,13 @@ interface Props {
 }
 
 export default function ProductForm({ initialValues, onSubmit, submitLabel, isLoading }: Props) {
-  const [name, setName] = useState(initialValues?.name ?? '');
+  const [title, setTitle] = useState(initialValues?.title ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [price, setPrice] = useState(initialValues?.price ? String(initialValues.price) : '');
-  const [comparePrice, setComparePrice] = useState(
-    initialValues?.comparePrice ? String(initialValues.comparePrice) : '',
-  );
+  const [mrp, setMrp] = useState(initialValues?.mrp ? String(initialValues.mrp) : '');
   const [sku, setSku] = useState(initialValues?.sku ?? '');
   const [stock, setStock] = useState(initialValues?.stock !== undefined ? String(initialValues.stock) : '');
-  const [category, setCategory] = useState(initialValues?.category ?? CATEGORIES[0]);
+  const [categoryId, setCategoryId] = useState(initialValues?.categoryId ?? CATEGORIES[0].id);
   const [tags, setTags] = useState(initialValues?.tags?.join(', ') ?? '');
   const [status, setStatus] = useState<ProductStatus>(initialValues?.status ?? 'active');
   const [images, setImages] = useState<string[]>(initialValues?.images ?? []);
@@ -70,8 +74,8 @@ export default function ProductForm({ initialValues, onSubmit, submitLabel, isLo
   }
 
   async function handleSubmit() {
-    if (!name.trim() || !price.trim() || !sku.trim() || !stock.trim()) {
-      Alert.alert('Missing Fields', 'Please fill in Name, Price, SKU, and Stock.');
+    if (!title.trim() || !price.trim() || !sku.trim() || !stock.trim()) {
+      Alert.alert('Missing Fields', 'Please fill in Title, Price, SKU, and Stock.');
       return;
     }
     const parsedPrice = parseFloat(price);
@@ -84,19 +88,18 @@ export default function ProductForm({ initialValues, onSubmit, submitLabel, isLo
       Alert.alert('Invalid Stock', 'Please enter a valid stock quantity.');
       return;
     }
-    // Use a placeholder if no image uploaded
     const finalImages = images.length > 0
       ? images
       : [`https://picsum.photos/seed/${sku.trim()}/400/400`];
 
     await onSubmit({
-      name: name.trim(),
+      title: title.trim(),
       description: description.trim(),
       price: parsedPrice,
-      comparePrice: comparePrice ? parseFloat(comparePrice) : undefined,
+      mrp: mrp ? parseFloat(mrp) : undefined,
       sku: sku.trim().toUpperCase(),
       stock: parsedStock,
-      category,
+      categoryId,
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       images: finalImages,
       status,
@@ -137,7 +140,7 @@ export default function ProductForm({ initialValues, onSubmit, submitLabel, isLo
       {/* Basic Info */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Basic Info</Text>
-        <Field label="Product Name *" value={name} onChangeText={setName} placeholder="e.g. Wireless Earbuds" />
+        <Field label="Product Title *" value={title} onChangeText={setTitle} placeholder="e.g. Wireless Earbuds" />
         <Field label="Description" value={description} onChangeText={setDescription} placeholder="Describe your product..." multiline />
         <Field label="SKU *" value={sku} onChangeText={setSku} placeholder="e.g. EARB-001" autoCapitalize="characters" />
       </View>
@@ -145,8 +148,8 @@ export default function ProductForm({ initialValues, onSubmit, submitLabel, isLo
       {/* Pricing */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Pricing</Text>
-        <Field label="Price (NPR) *" value={price} onChangeText={setPrice} placeholder="0" keyboardType="decimal-pad" />
-        <Field label="Compare Price (NPR)" value={comparePrice} onChangeText={setComparePrice} placeholder="Optional original price" keyboardType="decimal-pad" />
+        <Field label="Selling Price (NPR) *" value={price} onChangeText={setPrice} placeholder="0" keyboardType="decimal-pad" />
+        <Field label="MRP / Compare Price (NPR)" value={mrp} onChangeText={setMrp} placeholder="Optional original / MRP price" keyboardType="decimal-pad" />
       </View>
 
       {/* Inventory */}
@@ -161,11 +164,11 @@ export default function ProductForm({ initialValues, onSubmit, submitLabel, isLo
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
-              key={cat}
-              style={[styles.chip, category === cat && styles.chipActive]}
-              onPress={() => setCategory(cat)}
+              key={cat.id}
+              style={[styles.chip, categoryId === cat.id && styles.chipActive]}
+              onPress={() => setCategoryId(cat.id)}
             >
-              <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>{cat}</Text>
+              <Text style={[styles.chipText, categoryId === cat.id && styles.chipTextActive]}>{cat.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>

@@ -15,9 +15,11 @@ const STATUS_TABS: { label: string; value: OrderStatus | 'all' }[] = [
   { label: 'All', value: 'all' },
   { label: 'Pending', value: 'pending' },
   { label: 'Confirmed', value: 'confirmed' },
-  { label: 'Processing', value: 'processing' },
+  { label: 'Packed', value: 'packed' },
   { label: 'Shipped', value: 'shipped' },
+  { label: 'Out for Delivery', value: 'out_for_delivery' },
   { label: 'Delivered', value: 'delivered' },
+  { label: 'Returns', value: 'return_requested' },
   { label: 'Cancelled', value: 'cancelled' },
 ];
 

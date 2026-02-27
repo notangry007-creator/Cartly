@@ -13,7 +13,6 @@ import StatCard from '@/src/components/common/StatCard';
 import OrderStatusBadge from '@/src/components/common/OrderStatusBadge';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
 import { formatNPR, formatDateTime } from '@/src/utils/helpers';
-import { SEED_ANALYTICS } from '@/src/data/seed';
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -30,10 +29,14 @@ export default function DashboardScreen() {
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   const pendingOrders = orders.filter((o) => o.status === 'pending');
-  const todayRevenue = orders
+  const returnOrders = orders.filter((o) => o.status === 'return_requested');
+  const totalRevenue = orders
     .filter((o) => o.status === 'delivered')
     .reduce((sum, o) => sum + o.total, 0);
-  const lowStockProducts = products.filter((p) => p.stock > 0 && p.stock <= 10);
+  const lowStockProducts = products.filter((p) => {
+    const stock = p.variants[0]?.stock ?? 0;
+    return stock > 0 && stock <= 10;
+  });
   const recentOrders = [...orders].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
 
   return (
@@ -58,8 +61,8 @@ export default function DashboardScreen() {
         {/* Stats */}
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsRow}>
-          <StatCard label="Revenue" value={formatNPR(SEED_ANALYTICS.totalRevenue)} icon="cash-outline" iconColor={Colors.success} change={SEED_ANALYTICS.revenueChange} />
-          <StatCard label="Orders" value={String(SEED_ANALYTICS.totalOrders)} icon="receipt-outline" iconColor={Colors.info} change={SEED_ANALYTICS.ordersChange} />
+          <StatCard label="Revenue" value={formatNPR(totalRevenue)} icon="cash-outline" iconColor={Colors.success} />
+          <StatCard label="Orders" value={String(orders.length)} icon="receipt-outline" iconColor={Colors.info} />
         </View>
         <View style={styles.statsRow}>
           <StatCard label="Products" value={String(products.length)} icon="cube-outline" iconColor={Colors.accent} />
@@ -67,12 +70,19 @@ export default function DashboardScreen() {
         </View>
 
         {/* Alerts */}
-        {(pendingOrders.length > 0 || lowStockProducts.length > 0) && (
+        {(pendingOrders.length > 0 || returnOrders.length > 0 || lowStockProducts.length > 0) && (
           <View style={styles.alertsWrap}>
             {pendingOrders.length > 0 && (
               <TouchableOpacity style={[styles.alertCard, { borderLeftColor: Colors.warning }]} onPress={() => router.push('/(tabs)/orders')}>
                 <Ionicons name="time-outline" size={20} color={Colors.warning} />
                 <Text style={styles.alertText}>{pendingOrders.length} order{pendingOrders.length > 1 ? 's' : ''} awaiting confirmation</Text>
+                <Ionicons name="chevron-forward" size={16} color={Colors.grey500} />
+              </TouchableOpacity>
+            )}
+            {returnOrders.length > 0 && (
+              <TouchableOpacity style={[styles.alertCard, { borderLeftColor: Colors.warning }]} onPress={() => router.push('/(tabs)/orders')}>
+                <Ionicons name="return-down-back-outline" size={20} color={Colors.warning} />
+                <Text style={styles.alertText}>{returnOrders.length} return request{returnOrders.length > 1 ? 's' : ''} need attention</Text>
                 <Ionicons name="chevron-forward" size={16} color={Colors.grey500} />
               </TouchableOpacity>
             )}

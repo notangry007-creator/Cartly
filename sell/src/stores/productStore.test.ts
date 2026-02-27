@@ -1,35 +1,45 @@
 import { useProductStore } from './productStore';
 import { SEED_PRODUCTS } from '../data/seed';
 
-// Reset store between tests
 beforeEach(() => {
   useProductStore.setState({ products: [...SEED_PRODUCTS], isLoading: false });
 });
+
+const BASE_FORM = {
+  title: 'Test Product',
+  description: 'Test',
+  price: 999,
+  sku: 'TEST-001',
+  stock: 10,
+  categoryId: 'cat_electronics',
+  tags: ['test'],
+  images: [],
+  status: 'active' as const,
+};
 
 describe('productStore', () => {
   describe('addProduct', () => {
     it('adds a product to the beginning of the list', async () => {
       const initialCount = useProductStore.getState().products.length;
-      await useProductStore.getState().addProduct({
-        name: 'Test Product',
-        description: 'Test',
-        price: 999,
-        sku: 'TEST-001',
-        stock: 10,
-        category: 'Electronics',
-        tags: ['test'],
-        images: [],
-        status: 'active',
-      }, 'seller_001');
+      await useProductStore.getState().addProduct(BASE_FORM, 'seller_001');
       const { products } = useProductStore.getState();
       expect(products.length).toBe(initialCount + 1);
-      expect(products[0].name).toBe('Test Product');
+      expect(products[0].title).toBe('Test Product');
       expect(products[0].totalSold).toBe(0);
       expect(products[0].views).toBe(0);
     });
 
+    it('creates a default variant from form data', async () => {
+      await useProductStore.getState().addProduct(BASE_FORM, 'seller_001');
+      const product = useProductStore.getState().products[0];
+      expect(product.variants).toHaveLength(1);
+      expect(product.variants[0].price).toBe(999);
+      expect(product.variants[0].stock).toBe(10);
+      expect(product.variants[0].sku).toBe('TEST-001');
+    });
+
     it('assigns a unique id starting with prod_', async () => {
-      await useProductStore.getState().addProduct({ name: 'A', description: '', price: 1, sku: 'A', stock: 1, category: 'Other', tags: [], images: [], status: 'active' }, 's1');
+      await useProductStore.getState().addProduct(BASE_FORM, 's1');
       const newest = useProductStore.getState().products[0];
       expect(newest.id).toMatch(/^prod_/);
       expect(newest.id).not.toBe('');
@@ -37,19 +47,26 @@ describe('productStore', () => {
   });
 
   describe('updateProduct', () => {
-    it('updates product fields', async () => {
+    it('updates product title', async () => {
       const id = SEED_PRODUCTS[0].id;
-      await useProductStore.getState().updateProduct(id, { name: 'Updated Name', price: 9999 });
+      await useProductStore.getState().updateProduct(id, { title: 'Updated Title' });
       const product = useProductStore.getState().products.find((p) => p.id === id);
-      expect(product?.name).toBe('Updated Name');
-      expect(product?.price).toBe(9999);
+      expect(product?.title).toBe('Updated Title');
+    });
+
+    it('updates variant price and basePrice', async () => {
+      const id = SEED_PRODUCTS[0].id;
+      await useProductStore.getState().updateProduct(id, { price: 9999 });
+      const product = useProductStore.getState().products.find((p) => p.id === id);
+      expect(product?.basePrice).toBe(9999);
+      expect(product?.variants[0].price).toBe(9999);
     });
 
     it('does not affect other products', async () => {
       const id = SEED_PRODUCTS[0].id;
-      await useProductStore.getState().updateProduct(id, { name: 'Changed' });
+      await useProductStore.getState().updateProduct(id, { title: 'Changed' });
       const unchanged = useProductStore.getState().products.find((p) => p.id === SEED_PRODUCTS[1].id);
-      expect(unchanged?.name).toBe(SEED_PRODUCTS[1].name);
+      expect(unchanged?.title).toBe(SEED_PRODUCTS[1].title);
     });
   });
 
@@ -57,8 +74,7 @@ describe('productStore', () => {
     it('removes the product', async () => {
       const id = SEED_PRODUCTS[0].id;
       await useProductStore.getState().deleteProduct(id);
-      const found = useProductStore.getState().products.find((p) => p.id === id);
-      expect(found).toBeUndefined();
+      expect(useProductStore.getState().products.find((p) => p.id === id)).toBeUndefined();
     });
 
     it('does not remove other products', async () => {
@@ -78,27 +94,26 @@ describe('productStore', () => {
   });
 
   describe('updateStock', () => {
-    it('sets stock to 0 and status to out_of_stock', async () => {
+    it('sets variant stock to 0 and status to out_of_stock', async () => {
       const id = SEED_PRODUCTS[0].id;
       await useProductStore.getState().updateStock(id, 0);
       const product = useProductStore.getState().products.find((p) => p.id === id);
-      expect(product?.stock).toBe(0);
+      expect(product?.variants[0].stock).toBe(0);
       expect(product?.status).toBe('out_of_stock');
     });
 
     it('restores active status when stock goes from 0 to positive', async () => {
-      const id = SEED_PRODUCTS[1].id; // prod_002 is out_of_stock with stock=0
+      const id = SEED_PRODUCTS[1].id; // out_of_stock
       await useProductStore.getState().updateStock(id, 5);
       const product = useProductStore.getState().products.find((p) => p.id === id);
-      expect(product?.stock).toBe(5);
+      expect(product?.variants[0].stock).toBe(5);
       expect(product?.status).toBe('active');
     });
 
     it('does not change status of active product when adding stock', async () => {
-      const activeProduct = SEED_PRODUCTS.find((p) => p.status === 'active' && p.stock > 0)!;
+      const activeProduct = SEED_PRODUCTS.find((p) => p.status === 'active')!;
       await useProductStore.getState().updateStock(activeProduct.id, 100);
-      const product = useProductStore.getState().products.find((p) => p.id === activeProduct.id);
-      expect(product?.status).toBe('active');
+      expect(useProductStore.getState().products.find((p) => p.id === activeProduct.id)?.status).toBe('active');
     });
   });
 });

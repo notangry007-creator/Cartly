@@ -27,33 +27,50 @@ export interface SellerAddress {
 
 export type ProductStatus = 'active' | 'inactive' | 'out_of_stock' | 'draft';
 
+export interface ProductVariant {
+  id: string;
+  label: string;       // e.g. "Red / XL"
+  price: number;       // selling price (NPR)
+  mrp: number;         // compare-at / MRP price
+  stock: number;
+  sku: string;
+}
+
 export interface Product {
   id: string;
   sellerId: string;
-  name: string;
+  /** Display title shown to buyers. Matches buy/Product.title */
+  title: string;
   description: string;
-  price: number;
-  comparePrice?: number;
-  sku: string;
-  stock: number;
-  category: string;
-  tags: string[];
   images: string[];
+  /** FK to a Category id. Matches buy/Product.categoryId */
+  categoryId: string;
+  tags: string[];
+  /** Variants (size, colour, etc.). At least one required. Matches buy/Product.variants */
+  variants: ProductVariant[];
+  /** Convenience field: lowest variant price */
+  basePrice: number;
+  /** Convenience field: lowest variant MRP */
+  baseMrp: number;
   status: ProductStatus;
   createdAt: string;
   updatedAt: string;
   totalSold: number;
   views: number;
+  rating: number;
+  totalReviews: number;
 }
 
 export interface ProductFormData {
-  name: string;
+  title: string;
   description: string;
+  /** Simple price (NPR) — maps to a single default variant on save */
   price: number;
-  comparePrice?: number;
+  /** Compare-at / MRP — maps to variant.mrp */
+  mrp?: number;
   sku: string;
   stock: number;
-  category: string;
+  categoryId: string;
   tags: string[];
   images: string[];
   status: ProductStatus;
@@ -61,21 +78,41 @@ export interface ProductFormData {
 
 // ─── Order ───────────────────────────────────────────────────────────────────
 
+/**
+ * Canonical order status shared between buy and sell apps.
+ * Matches buy/src/types/index.ts OrderStatus exactly.
+ */
 export type OrderStatus =
   | 'pending'
   | 'confirmed'
-  | 'processing'
+  | 'packed'
   | 'shipped'
+  | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
+  | 'return_requested'
+  | 'return_approved'
+  | 'return_picked'
   | 'refunded';
+
+/**
+ * Payment methods shared between buy and sell.
+ * 'cod' = cash on delivery (matches buy/PaymentMethod)
+ * 'wallet' = in-app wallet (matches buy/PaymentMethod)
+ * 'esewa' | 'khalti' | 'bank_transfer' = seller-side payout methods
+ */
+export type PaymentMethod = 'cod' | 'wallet' | 'esewa' | 'khalti' | 'bank_transfer';
 
 export interface OrderItem {
   productId: string;
-  productName: string;
+  variantId: string;
+  /** Snapshot of product title at time of order */
+  title: string;
+  variantLabel: string;
   productImage: string;
   quantity: number;
   price: number;
+  mrp: number;
 }
 
 export interface Order {
@@ -88,9 +125,10 @@ export interface Order {
   deliveryFee: number;
   total: number;
   status: OrderStatus;
-  paymentMethod: 'cash_on_delivery' | 'esewa' | 'khalti' | 'bank_transfer';
+  paymentMethod: PaymentMethod;
   isPaid: boolean;
   note?: string;
+  returnReason?: string;
   createdAt: string;
   updatedAt: string;
 }
