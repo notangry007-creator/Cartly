@@ -1,29 +1,45 @@
 {
   "expo": {
-    "name": "buy",
+    "name": "Buy",
     "slug": "buy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "buy",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#E53935"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.buy.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Buy needs your location for delivery estimates.",
+        "NSCameraUsageDescription": "Buy needs camera for return photos.",
+        "NSPhotoLibraryUsageDescription": "Buy needs photos for return requests."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E53935"
+      },
+      "package": "com.buy.app",
+      "permissions": ["ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION","CAMERA","READ_EXTERNAL_STORAGE","WRITE_EXTERNAL_STORAGE","VIBRATE"]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      ["expo-location", {"locationAlwaysAndWhenInUsePermission": "Allow Buy to use your location."}],
+      ["expo-notifications", {"icon": "./assets/icon.png","color": "#E53935"}],
+      ["expo-image-picker", {"photosPermission": "Allow Buy to access photos.","cameraPermission": "Allow Buy to use camera."}]
+    ],
+    "experiments": { "typedRoutes": true }
   }
 }

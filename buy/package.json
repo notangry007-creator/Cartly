@@ -1,7 +1,7 @@
 {
   "name": "buy",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -9,10 +9,43 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.1.1",
+    "@hookform/resolvers": "^5.2.2",
+    "@react-native-async-storage/async-storage": "^3.0.1",
+    "@tanstack/react-query": "^5.90.21",
+    "date-fns": "^4.1.0",
     "expo": "~55.0.3",
+    "expo-constants": "^55.0.7",
+    "expo-image": "^55.0.5",
+    "expo-image-picker": "^55.0.10",
+    "expo-linking": "^55.0.7",
+    "expo-location": "^55.1.2",
+    "expo-notifications": "^55.0.10",
+    "expo-router": "^55.0.3",
+    "expo-secure-store": "^55.0.8",
+    "expo-sharing": "^55.0.11",
     "expo-status-bar": "~55.0.4",
     "react": "19.2.0",
-    "react-native": "0.83.2"
+    "react-dom": "^19.2.4",
+    "react-hook-form": "^7.71.2",
+    "react-native": "0.83.2",
+    "react-native-gesture-handler": "^2.30.0",
+    "react-native-maps": "^1.27.1",
+    "react-native-paper": "^5.15.0",
+    "react-native-reanimated": "^4.2.2",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0",
+    "react-native-web": "^0.21.2",
+    "react-native-worklets": "^0.7.4",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.11"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-native": "^0.72.8",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.9.3"
+  }
 }
