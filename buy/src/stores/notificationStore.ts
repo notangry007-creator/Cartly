@@ -1,68 +1,90 @@
 import { create } from 'zustand';
 import { AppNotification } from '../types';
-import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
+import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
-import { v4 as uuid } from 'uuid';
-
-function notifKey(): string | null {
-  const userId = useAuthStore.getState().user?.id;
-  return userId ? `${STORAGE_KEYS.NOTIFICATIONS}_${userId}` : null;
-}
 
 type NewNotificationPayload = Omit<AppNotification, 'id' | 'userId' | 'read' | 'createdAt'>;
 
 interface NotificationState {
   notifications: AppNotification[];
   unreadCount: number;
-  /** Called once on app init / after login with the authenticated userId. */
   loadNotifications: (userId: string) => Promise<void>;
   addNotification: (payload: NewNotificationPayload) => Promise<void>;
   markRead: (notificationId: string) => Promise<void>;
   markAllRead: () => Promise<void>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToNotif(row: any): AppNotification {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: row.title,
+    body: row.body,
+    type: row.type,
+    referenceId: row.reference_id ?? undefined,
+    read: row.read,
+    createdAt: row.created_at,
+  };
+}
+
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
 
+  // ── loadNotifications ─────────────────────────────────────────────────────
   loadNotifications: async (userId) => {
-    const key = `${STORAGE_KEYS.NOTIFICATIONS}_${userId}`;
-    const ns = (await getItem<AppNotification[]>(key)) ?? [];
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) return;
+    const ns = (data ?? []).map(rowToNotif);
     set({ notifications: ns, unreadCount: ns.filter(n => !n.read).length });
   },
 
+  // ── addNotification ───────────────────────────────────────────────────────
   addNotification: async (payload) => {
-    const key = notifKey();
     const userId = useAuthStore.getState().user?.id;
-    if (!key || !userId) return;
+    if (!userId) return;
 
-    const newNotif: AppNotification = {
-      ...payload,
-      id: uuid(),
-      userId,
-      read: false,
-      createdAt: new Date().toISOString(),
-    };
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title: payload.title,
+        body: payload.body,
+        type: payload.type,
+        reference_id: payload.referenceId ?? null,
+        read: false,
+      })
+      .select()
+      .single();
+
+    if (error) return;
+    const newNotif = rowToNotif(data);
     const updated = [newNotif, ...get().notifications];
-    await setItem(key, updated);
     set({ notifications: updated, unreadCount: updated.filter(n => !n.read).length });
   },
 
+  // ── markRead ──────────────────────────────────────────────────────────────
   markRead: async (notificationId) => {
-    const key = notifKey();
-    if (!key) return;
+    await supabase.from('notifications').update({ read: true }).eq('id', notificationId);
     const updated = get().notifications.map(n =>
       n.id === notificationId ? { ...n, read: true } : n,
     );
-    await setItem(key, updated);
     set({ notifications: updated, unreadCount: updated.filter(n => !n.read).length });
   },
 
+  // ── markAllRead ───────────────────────────────────────────────────────────
   markAllRead: async () => {
-    const key = notifKey();
-    if (!key) return;
+    const userId = useAuthStore.getState().user?.id;
+    if (!userId) return;
+    await supabase.from('notifications').update({ read: true }).eq('user_id', userId);
     const updated = get().notifications.map(n => ({ ...n, read: true }));
-    await setItem(key, updated);
     set({ notifications: updated, unreadCount: 0 });
   },
 }));
