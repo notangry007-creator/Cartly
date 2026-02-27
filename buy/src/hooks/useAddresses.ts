@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Address } from '../types';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
 import { v4 as uuid } from 'uuid';
-const delay = (ms=200) => new Promise(r=>setTimeout(r,ms));
+const delay = (ms = 200) => __DEV__ ? new Promise(r => setTimeout(r, ms)) : Promise.resolve();
 const ak = (uid:string) => STORAGE_KEYS.ADDRESSES+'_'+uid;
 export const useAddresses = (userId: string) => useQuery({
   queryKey: ['addresses', userId], enabled: !!userId, staleTime: 30000,

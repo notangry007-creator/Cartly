@@ -45,9 +45,8 @@ export default function NotificationsScreen() {
     if (user) await loadNotifications(user.id); // loadNotifications still takes userId for initial load
     setRefreshing(false);
   }
-  const auth = useAuthGuard();
-
-  if (!auth) return null;
+  const guard = useAuthGuard();
+  if (guard) return guard;
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>

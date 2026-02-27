@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
-  View, StyleSheet, TouchableOpacity, FlatList,
+  View, StyleSheet, TouchableOpacity,
   Dimensions, RefreshControl, ScrollView,
 } from 'react-native';
 import { Text, Surface } from 'react-native-paper';
@@ -62,153 +62,25 @@ export default function HomeScreen() {
   const { data: dealProducts, isLoading: loadingDeals } = useProducts({ sortBy: 'price_asc', inStock: true });
   const { products: recentProducts } = useRecentlyViewedStore();
   const { productIds: wishlistIds } = useWishlistStore();
-  const wishlistProducts = PRODUCTS.filter(p => wishlistIds.includes(p.id));
+
+  // Memoize: avoid re-filtering PRODUCTS on every render when wishlistIds hasn't changed
+  const wishlistProducts = useMemo(
+    () => PRODUCTS.filter(p => wishlistIds.includes(p.id)),
+    [wishlistIds],
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([
       qc.invalidateQueries({ queryKey: ['products'] }),
       qc.invalidateQueries({ queryKey: ['categories'] }),
-      qc.invalidateQueries({ queryKey: ['banners'] }),
     ]);
     setRefreshing(false);
   }, [qc]);
 
-  const curZone = ZONES.find(z => z.id === zoneId);
+  const curZone = useMemo(() => ZONES.find(z => z.id === zoneId), [zoneId]);
 
-  // Build page sections as FlatList data
-  type Section =
-    | { type: 'banners' }
-    | { type: 'categories' }
-    | { type: 'fast' }
-    | { type: 'verified' }
-    | { type: 'deals' }
-    | { type: 'recent' }
-    | { type: 'wishlist' };
-
-  const sections: Section[] = [
-    { type: 'banners' },
-    { type: 'categories' },
-    ...(recentProducts.length > 0 ? [{ type: 'recent' as const }] : []),
-    ...(wishlistProducts.length > 0 ? [{ type: 'wishlist' as const }] : []),
-    ...(zoneId === 'ktm_core' || zoneId === 'ktm_outer' ? [{ type: 'fast' as const }] : []),
-    { type: 'verified' },
-    { type: 'deals' },
-  ];
-
-  function renderSection({ item }: { item: Section }) {
-    switch (item.type) {
-      case 'banners':
-        return (
-          <>
-            <ScrollView
-              ref={bannerScrollRef}
-              horizontal pagingEnabled showsHorizontalScrollIndicator={false}
-              style={{ marginTop: SPACING.sm }}
-              onScroll={e => setBannerIdx(Math.round(e.nativeEvent.contentOffset.x / (W - SPACING.lg * 2)))}
-              scrollEventThrottle={16}
-            >
-              {BANNERS.map(b => {
-                const imgData = (IMG.banners as Record<string, { uri: string; blurhash: string }>)[b.id];
-                return (
-                  <TouchableOpacity
-                    key={b.id} activeOpacity={0.9}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${b.title}${b.subtitle ? ': ' + b.subtitle : ''}`}
-                    onPress={() => {
-                      if (b.targetType === 'category' && b.targetId) router.push(`/category/${b.targetId}`);
-                      else if (b.targetType === 'search') router.push({ pathname: '/search', params: { q: b.targetQuery } });
-                    }}
-                  >
-                    <View style={s.banner}>
-                      <CachedImage uri={imgData?.uri ?? b.imageUrl} blurhash={imgData?.blurhash} style={s.bannerImg} />
-                      <View style={s.bannerOvl}>
-                        <Text style={s.bannerTitle}>{b.title}</Text>
-                        {b.subtitle && <Text style={s.bannerSub}>{b.subtitle}</Text>}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <View style={s.dots}>
-              {BANNERS.map((_, i) => <View key={i} style={[s.dot, i === bannerIdx && s.dotA]} />)}
-            </View>
-          </>
-        );
-
-      case 'categories':
-        return (
-          <>
-            <SectionHeader title="Categories" onSeeAll={() => router.push('/(tabs)/categories')} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
-              {loadingCats
-                ? Array.from({ length: 6 }).map((_, i) => (
-                    <View key={i} style={s.catItem}>
-                      <View style={[s.catImgWrap, { width: 56, height: 56, borderRadius: 28, backgroundColor: '#e0e0e0' }]} />
-                    </View>
-                  ))
-                : (categories ?? []).map(cat => {
-                    const imgData = (IMG.categories as Record<string, { uri: string; blurhash: string }>)[cat.id];
-                    return (
-                      <TouchableOpacity key={cat.id} style={s.catItem} onPress={() => router.push(`/category/${cat.id}`)}>
-                        <Surface style={s.catImgWrap} elevation={1}>
-                          <CachedImage uri={imgData?.uri ?? cat.imageUrl} blurhash={imgData?.blurhash} style={s.catImg} />
-                        </Surface>
-                         <Text variant="labelSmall" style={[s.catLabel, { color: c.textSecondary }]} numberOfLines={1}>{cat.name}</Text>
-                      </TouchableOpacity>
-                    );
-                  })
-              }
-            </ScrollView>
-          </>
-        );
-
-      case 'recent':
-        return (
-          <>
-            <SectionHeader title="🕐 Recently Viewed" />
-            <HorizontalProductList data={recentProducts} zoneId={zoneId} isLoading={false} />
-          </>
-        );
-
-      case 'wishlist':
-        return (
-          <>
-            <SectionHeader title="❤️ Your Wishlist" onSeeAll={() => router.push('/wishlist')} />
-            <HorizontalProductList data={wishlistProducts} zoneId={zoneId} isLoading={false} />
-          </>
-        );
-
-      case 'fast':
-        return (
-          <>
-            <SectionHeader title="⚡ Fast Delivery" onSeeAll={() => router.push({ pathname: '/search', params: { fastDelivery: '1' } })} />
-            <HorizontalProductList data={fastProducts} zoneId={zoneId} isLoading={loadingFast} />
-          </>
-        );
-
-      case 'verified':
-        return (
-          <>
-            <SectionHeader title="✅ Verified Sellers" onSeeAll={() => router.push({ pathname: '/search', params: { verified: '1' } })} />
-            <HorizontalProductList data={verifiedProducts} zoneId={zoneId} isLoading={loadingVerified} />
-          </>
-        );
-
-      case 'deals':
-        return (
-          <>
-            <SectionHeader title="🔥 Top Deals" onSeeAll={() => router.push({ pathname: '/search', params: { sort: 'price_asc' } })} />
-            <HorizontalProductList data={dealProducts} zoneId={zoneId} isLoading={loadingDeals} />
-            <View style={{ height: SPACING.xl }} />
-          </>
-        );
-
-      default:
-        return null;
-    }
-  }
+  const showFast = zoneId === 'ktm_core' || zoneId === 'ktm_outer';
 
   return (
     <View style={[s.container, { paddingTop: insets.top, backgroundColor: c.screenBg }]}>
@@ -221,7 +93,9 @@ export default function HomeScreen() {
           accessibilityLabel={`Current delivery zone: ${curZone?.name ?? 'Select Zone'}. Tap to change`}
         >
           <Ionicons name="location" size={16} color={theme.colors.primary} accessibilityElementsHidden />
-          <Text variant="labelMedium" style={[s.zoneName, { color: c.textSecondary }]} numberOfLines={1}>{curZone?.name ?? 'Select Zone'}</Text>
+          <Text variant="labelMedium" style={[s.zoneName, { color: c.textSecondary }]} numberOfLines={1}>
+            {curZone?.name ?? 'Select Zone'}
+          </Text>
           <Ionicons name="chevron-down" size={14} color={c.textMuted} accessibilityElementsHidden />
         </TouchableOpacity>
         <TouchableOpacity
@@ -249,17 +123,127 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
 
-      {/* Main scrollable content — single FlatList, no nested VirtualizedList */}
-      <FlatList
-        data={sections}
-        keyExtractor={item => item.type}
-        renderItem={renderSection}
+      {/*
+        Main content: plain ScrollView — NOT FlatList.
+        The home feed has at most 7 sections and each contains a horizontal
+        ScrollView (not a VirtualizedList), so vertical virtualisation gives
+        zero benefit and previously required removeClippedSubviews={false}
+        as a workaround for the nested-VirtualizedList warning.
+      */}
+      <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
         }
-        removeClippedSubviews={false}
-      />
+      >
+        {/* ── Banners ─────────────────────────────────────────────────── */}
+        <ScrollView
+          ref={bannerScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={{ marginTop: SPACING.sm }}
+          onScroll={e =>
+            setBannerIdx(Math.round(e.nativeEvent.contentOffset.x / (W - SPACING.lg * 2)))
+          }
+          scrollEventThrottle={16}
+        >
+          {BANNERS.map(b => {
+            const imgData = (IMG.banners as Record<string, { uri: string; blurhash: string }>)[b.id];
+            return (
+              <TouchableOpacity
+                key={b.id}
+                activeOpacity={0.9}
+                accessibilityRole="button"
+                accessibilityLabel={`${b.title}${b.subtitle ? ': ' + b.subtitle : ''}`}
+                onPress={() => {
+                  if (b.targetType === 'category' && b.targetId) router.push(`/category/${b.targetId}`);
+                  else if (b.targetType === 'search') router.push({ pathname: '/search', params: { q: b.targetQuery } });
+                }}
+              >
+                <View style={s.banner}>
+                  <CachedImage uri={imgData?.uri ?? b.imageUrl} blurhash={imgData?.blurhash} style={s.bannerImg} />
+                  <View style={s.bannerOvl}>
+                    <Text style={s.bannerTitle}>{b.title}</Text>
+                    {b.subtitle && <Text style={s.bannerSub}>{b.subtitle}</Text>}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <View style={s.dots}>
+          {BANNERS.map((_, i) => <View key={i} style={[s.dot, i === bannerIdx && s.dotA]} />)}
+        </View>
+
+        {/* ── Categories ──────────────────────────────────────────────── */}
+        <SectionHeader title="Categories" onSeeAll={() => router.push('/(tabs)/categories')} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.catRow}>
+          {loadingCats
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={s.catItem}>
+                  <View style={[s.catImgWrap, { width: 56, height: 56, borderRadius: 28, backgroundColor: '#e0e0e0' }]} />
+                </View>
+              ))
+            : (categories ?? []).map(cat => {
+                const imgData = (IMG.categories as Record<string, { uri: string; blurhash: string }>)[cat.id];
+                return (
+                  <TouchableOpacity key={cat.id} style={s.catItem} onPress={() => router.push(`/category/${cat.id}`)}>
+                    <Surface style={s.catImgWrap} elevation={1}>
+                      <CachedImage uri={imgData?.uri ?? cat.imageUrl} blurhash={imgData?.blurhash} style={s.catImg} />
+                    </Surface>
+                    <Text variant="labelSmall" style={[s.catLabel, { color: c.textSecondary }]} numberOfLines={1}>
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })
+          }
+        </ScrollView>
+
+        {/* ── Recently Viewed ─────────────────────────────────────────── */}
+        {recentProducts.length > 0 && (
+          <>
+            <SectionHeader title="🕐 Recently Viewed" />
+            <HorizontalProductList data={recentProducts} zoneId={zoneId} isLoading={false} />
+          </>
+        )}
+
+        {/* ── Wishlist ────────────────────────────────────────────────── */}
+        {wishlistProducts.length > 0 && (
+          <>
+            <SectionHeader title="❤️ Your Wishlist" onSeeAll={() => router.push('/wishlist')} />
+            <HorizontalProductList data={wishlistProducts} zoneId={zoneId} isLoading={false} />
+          </>
+        )}
+
+        {/* ── Fast Delivery (KTM only) ─────────────────────────────────  */}
+        {showFast && (
+          <>
+            <SectionHeader
+              title="⚡ Fast Delivery"
+              onSeeAll={() => router.push({ pathname: '/search', params: { fastDelivery: '1' } })}
+            />
+            <HorizontalProductList data={fastProducts} zoneId={zoneId} isLoading={loadingFast} />
+          </>
+        )}
+
+        {/* ── Verified Sellers ────────────────────────────────────────── */}
+        <SectionHeader
+          title="✅ Verified Sellers"
+          onSeeAll={() => router.push({ pathname: '/search', params: { verified: '1' } })}
+        />
+        <HorizontalProductList data={verifiedProducts} zoneId={zoneId} isLoading={loadingVerified} />
+
+        {/* ── Top Deals ───────────────────────────────────────────────── */}
+        <SectionHeader
+          title="🔥 Top Deals"
+          onSeeAll={() => router.push({ pathname: '/search', params: { sort: 'price_asc' } })}
+        />
+        <HorizontalProductList data={dealProducts} zoneId={zoneId} isLoading={loadingDeals} />
+
+        <View style={{ height: SPACING.xl }} />
+      </ScrollView>
 
       {/* Zone picker overlay */}
       {showZonePicker && (

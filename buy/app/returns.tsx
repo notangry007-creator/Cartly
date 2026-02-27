@@ -20,9 +20,8 @@ export default function ReturnsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { data: returns = [], isLoading, refetch } = useReturns(user?.id ?? '');
-  const auth = useAuthGuard();
-
-  if (!auth) return null;
+  const guard = useAuthGuard();
+  if (guard) return guard;
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>

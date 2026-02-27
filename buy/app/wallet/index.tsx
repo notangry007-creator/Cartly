@@ -17,8 +17,8 @@ export default function WalletScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { data: txs = [], isLoading, refetch } = useWalletTransactions(user?.id ?? '');
-  const auth = useAuthGuard();
-  if (!auth) return null;
+  const guard = useAuthGuard();
+  if (guard) return guard;
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>

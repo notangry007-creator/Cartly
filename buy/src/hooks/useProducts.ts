@@ -4,7 +4,9 @@ import { PRODUCTS, REVIEWS, SELLERS, CATEGORIES } from '../data/seed';
 import { Review, ZoneId, DeliveryOption } from '../types';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
 import { v4 as uuid } from 'uuid';
-const delay = (ms=300) => new Promise(r => setTimeout(r,ms));
+// Simulate network latency in development only.
+// In production builds __DEV__ is false, so this resolves immediately.
+const delay = (ms = 300) => __DEV__ ? new Promise(r => setTimeout(r, ms)) : Promise.resolve();
 
 export const useProducts = (filters?: {
   categoryId?:string; subcategoryId?:string; zoneId?:ZoneId; search?:string;
