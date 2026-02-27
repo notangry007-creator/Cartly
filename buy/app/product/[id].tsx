@@ -28,6 +28,7 @@ import {
 } from '../../src/utils/helpers';
 import { theme, SPACING, RADIUS } from '../../src/theme';
 import { IMG } from '../../src/data/images';
+import ProductVideoPlayer, { isVideoUrl } from '../../src/components/common/ProductVideoPlayer';
 
 const { width: W } = Dimensions.get('window');
 
@@ -265,10 +266,21 @@ export default function ProductDetailScreen() {
             {product.images.map((img, i) => {
               const productImgs = (IMG.products as unknown as Record<string, {uri:string;blurhash:string}[]>)[product.id];
               const imgData = productImgs?.[i];
+              const resolvedUri = imgData?.uri ?? img;
+              // Render video player for video URLs, image for everything else
+              if (isVideoUrl(resolvedUri)) {
+                return (
+                  <ProductVideoPlayer
+                    key={i}
+                    uri={resolvedUri}
+                    style={s.mainImg}
+                  />
+                );
+              }
               return (
                 <TouchableOpacity key={i} onPress={() => openGallery(i)} activeOpacity={0.95}>
                   <Image
-                    source={{ uri: imgData?.uri ?? img }}
+                    source={{ uri: resolvedUri }}
                     style={s.mainImg}
                     contentFit="cover"
                     placeholder={{ blurhash: imgData?.blurhash }}

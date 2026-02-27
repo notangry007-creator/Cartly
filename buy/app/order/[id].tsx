@@ -11,6 +11,7 @@ import { useOrder, useCancelOrder, useUpdateOrderStatus } from '../../src/hooks/
 import { useCallback } from 'react';
 import { useCartStore } from '../../src/stores/cartStore';
 import { formatDate, formatDateTime, formatNPR } from '../../src/utils/helpers';
+import { shareOrderInvoicePdf } from '../../src/utils/invoicePdf';
 import { OrderStatus } from '../../src/types';
 import ScreenHeader from '../../src/components/common/ScreenHeader';
 import DeliveryTrackingMap from '../../src/components/common/DeliveryTrackingMap';
@@ -121,6 +122,15 @@ export default function OrderDetailScreen() {
               Buy Again
             </Button>
           )}
+          <Button
+            mode="outlined"
+            onPress={() => shareOrderInvoicePdf(order).catch(() => {})}
+            icon="document-text-outline"
+            accessibilityRole="button"
+            accessibilityLabel="Download PDF invoice for this order"
+          >
+            Download Invoice PDF
+          </Button>
           {order.canReview && (
           <Button
             mode="contained"

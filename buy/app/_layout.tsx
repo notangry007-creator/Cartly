@@ -128,6 +128,7 @@ export default function RootLayout() {
                     <Stack.Screen name="addresses/edit/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="wallet/index" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="wallet/topup" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="wallet/withdraw" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="returns" options={{ animation: 'slide_from_right' }} />
@@ -139,6 +140,7 @@ export default function RootLayout() {
                     <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="compare" options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
                     <Stack.Screen name="referral" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="pickup-points" options={{ animation: 'slide_from_right' }} />
                   </Stack>
                 </AppInitializer>
               </ToastProvider>

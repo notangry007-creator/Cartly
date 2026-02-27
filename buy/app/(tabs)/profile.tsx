@@ -70,6 +70,8 @@ export default function ProfileScreen() {
           <MI icon="refresh-outline" label="Returns & Refunds" onPress={()=>router.push('/returns')}/>
           <Divider/>
           <MI icon="location-outline" label="Saved Addresses" onPress={()=>router.push('/addresses')}/>
+          <Divider/>
+          <MI icon="storefront-outline" label="Pickup Points" subtitle="Find nearby pickup locations" onPress={()=>router.push('/pickup-points')}/>
         </Surface>
         <Surface style={s.menuSec} elevation={1}>
           <Text variant="labelSmall" style={s.secLabel}>ACCOUNT</Text>
