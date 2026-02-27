@@ -62,7 +62,7 @@ export const useCreateOrder = () => {
       };
       await setItem(ok(order.userId), [no, ...existing]);
 
-      // Simulate order progression — timers are tracked for cleanup
+      // Auto-progress order status (replace with webhook/server push in production)
       const t1 = setTimeout(() => progressOrder(order.userId, no.id, 'confirmed', 'Confirmed by seller'), 8000);
       const t2 = setTimeout(() => progressOrder(order.userId, no.id, 'packed', 'Packed and ready for shipment'), 20000);
       registerTimer(no.id, t1);

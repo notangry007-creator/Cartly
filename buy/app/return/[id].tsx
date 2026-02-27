@@ -212,7 +212,7 @@ export default function ReturnDetailScreen() {
             </Button>
           )}
 
-          {canProcessRefund && __DEV__ && (
+          {canProcessRefund && (
             <Button
               mode="contained"
               onPress={handleProcessRefund}
@@ -221,7 +221,7 @@ export default function ReturnDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Process refund to wallet"
             >
-              [Dev] Process Refund
+              Process Refund to Wallet
             </Button>
           )}
 

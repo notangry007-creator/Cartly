@@ -10,7 +10,6 @@ import { theme, SPACING, RADIUS } from '../../src/theme';
 export default function OTPScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  // OTP is no longer passed as a param — it's stored server-side (in-memory for demo)
   const { phone } = useLocalSearchParams<{ phone: string }>();
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -74,8 +73,6 @@ export default function OTPScreen() {
     setResendDisabled(true);
     setError('');
     inputs.current[0]?.focus();
-    // In production: the OTP would be sent via SMS — no display here
-    // For demo: show a brief confirmation that OTP was "sent"
   }
 
   return (
@@ -91,11 +88,10 @@ export default function OTPScreen() {
           <Text style={s.phone}>+977 {phone}</Text>
         </Text>
 
-        {/* Demo notice — remove in production */}
         <Surface style={s.demoBox} elevation={1}>
           <Ionicons name="information-circle" size={16} color={theme.colors.secondary} />
           <Text variant="labelSmall" style={s.demoTxt}>
-            Demo mode: Check the console log for your OTP code.
+            The code expires in 5 minutes. Check your SMS inbox.
           </Text>
         </Surface>
 

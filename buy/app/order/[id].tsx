@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  useOrder, useCancelOrder, useUpdateOrderStatus,
+  useOrder, useCancelOrder,
   useCancelOrderItem, useChangeOrderAddress,
 } from '../../src/hooks/useOrders';
 import { useAddresses } from '../../src/hooks/useAddresses';
@@ -64,7 +64,6 @@ export default function OrderDetailScreen() {
   const { user } = useAuthStore();
   const { data: order, isLoading } = useOrder(user?.id ?? '', id);
   const { mutateAsync: cancelOrder, isPending: cancelling } = useCancelOrder();
-  const { mutateAsync: updateStatus } = useUpdateOrderStatus();
   const { mutateAsync: cancelItem } = useCancelOrderItem();
   const { mutateAsync: changeAddress } = useChangeOrderAddress();
   const { data: addresses = [] } = useAddresses(user?.id ?? '');
@@ -146,7 +145,6 @@ export default function OrderDetailScreen() {
   const returnWindowExpired = order.status === 'delivered' && !isWithinReturnWindow;
 
   const canBuyAgain = ['delivered', 'cancelled', 'refunded'].includes(order.status);
-  const canSim = !['delivered', 'cancelled', 'refunded'].includes(order.status);
   const canChangeAddress = ['pending', 'confirmed'].includes(order.status);
 
   async function handleBuyAgain() {
@@ -241,17 +239,6 @@ export default function OrderDetailScreen() {
             })}
           </View>
 
-          {__DEV__ && canSim && (
-            <Button
-              mode="text"
-              compact
-              onPress={() => { const n = NEXT[order.status]; if (n) updateStatus({ userId: user!.id, orderId: order.id, status: n }); }}
-              textColor="#aaa"
-              style={{ marginTop: SPACING.sm }}
-            >
-              [Dev] Simulate Next Step
-            </Button>
-          )}
         </Surface>
 
         {/* Live delivery map */}

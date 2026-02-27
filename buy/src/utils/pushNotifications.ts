@@ -144,7 +144,6 @@ export async function cancelAllNotifications(): Promise<void> {
 }
 
 export async function scheduleOrderProgressNotifications(orderId: string): Promise<void> {
-  // Simulate real delivery timeline with realistic delays
   await scheduleOrderNotification(orderId, 'confirmed', 5);
   await scheduleOrderNotification(orderId, 'packed', 30);
   await scheduleOrderNotification(orderId, 'shipped', 90);

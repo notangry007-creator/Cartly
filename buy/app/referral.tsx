@@ -16,7 +16,7 @@ const REFEREE_REWARD_NPR = 100;
 
 export default function ReferralScreen() {
   const insets = useSafeAreaInsets();
-  const { user, creditWallet } = useAuthStore();
+  const { user } = useAuthStore();
   const { showSuccess } = useToast();
   const [copied, setCopied] = useState(false);
   const auth = useAuthGuard();
@@ -39,13 +39,6 @@ export default function ReferralScreen() {
     Haptics.selectionAsync();
     showSuccess(`Referral code "${referralCode}" shared!`);
     setTimeout(() => setCopied(false), 2000);
-  }
-
-  // Demo: simulate a referral being used
-  async function simulateReferralReward() {
-    await creditWallet(REFERRER_REWARD_NPR);
-    showSuccess(`NPR ${REFERRER_REWARD_NPR} referral bonus added to your wallet!`);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
   return (
@@ -116,12 +109,6 @@ export default function ReferralScreen() {
         Maximum 10 referrals per account. Rewards expire after 90 days.
       </Text>
 
-      {/* Dev simulation */}
-      {__DEV__ && (
-        <Button mode="text" onPress={simulateReferralReward} textColor="#aaa" style={{ marginTop: SPACING.sm }}>
-          [Dev] Simulate Referral Reward
-        </Button>
-      )}
     </View>
   );
 }

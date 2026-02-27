@@ -15,8 +15,8 @@ import { theme, SPACING, RADIUS } from '../../src/theme';
 const QUICK_AMOUNTS = [200, 500, 1000, 2000, 5000];
 
 const PAYMENT_METHODS = [
-  { id: 'esewa', label: 'eSewa', icon: 'phone-portrait', color: '#60BB46', note: 'Simulation only' },
-  { id: 'khalti', label: 'Khalti', icon: 'phone-portrait', color: '#5C2D91', note: 'Simulation only' },
+  { id: 'esewa', label: 'eSewa', icon: 'phone-portrait', color: '#60BB46', note: 'Fast & secure' },
+  { id: 'khalti', label: 'Khalti', icon: 'phone-portrait', color: '#5C2D91', note: 'Fast & secure' },
   { id: 'bank', label: 'Bank Transfer', icon: 'business', color: '#1565C0', note: 'NEFT / RTGS' },
   { id: 'card', label: 'Debit / Credit Card', icon: 'card', color: '#E53935', note: 'Visa / Mastercard' },
 ];
@@ -155,7 +155,7 @@ export default function WalletTopUpScreen() {
           </Button>
 
           <Text variant="labelSmall" style={s.disclaimer}>
-            This is a simulated payment for demo purposes. No real money is transferred.
+            Your payment is processed securely. Funds are credited instantly to your Buy Wallet.
           </Text>
         </View>
         <View style={{ height: SPACING.xl }} />

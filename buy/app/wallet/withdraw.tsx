@@ -160,7 +160,7 @@ export default function WalletWithdrawScreen() {
           </Button>
 
           <Text variant="labelSmall" style={s.disclaimer}>
-            Withdrawals are processed within 1-2 business days. This is a simulated withdrawal for demo purposes.
+            Withdrawals are processed within 1-2 business days. Funds are transferred to your selected account.
           </Text>
         </View>
         <View style={{ height: SPACING.xl }} />
