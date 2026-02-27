@@ -61,8 +61,8 @@ export default function CheckoutScreen() {
       const orderItems: OrderItem[] = resolved.map(({item,p,v})=>({productId:item.productId,variantId:item.variantId,title:p!.title,variantLabel:v!.label,imageUrl:p!.images[0],quantity:item.quantity,price:v!.price,mrp:v!.mrp}));
       const order = await createOrder({userId:u.id,items:orderItems,addressId:selAddr.id,addressSnapshot:selAddr,zoneId,deliveryOption:dOpt,paymentMethod:payMethod,subtotal,shippingFee,codFee,discount,couponCode:appliedCoupon?.code,total,status:'pending'});
       if(payMethod==='wallet'){await debitWallet(total);await addTx({userId:u.id,type:'debit',amount:total,description:'Order '+order.id,referenceId:order.id,balance:u.walletBalance-total});}
-      await clearCart(u.id);
-      await addNotification(u.id,{title:'Order Placed!',body:'Order #'+order.id.slice(-8).toUpperCase()+' placed. Total: '+formatNPR(total),type:'order',referenceId:order.id});
+      await clearCart();
+      await addNotification({title:'Order Placed!',body:'Order #'+order.id.slice(-8).toUpperCase()+' placed. Total: '+formatNPR(total),type:'order',referenceId:order.id});
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace({
         pathname: '/order/confirmation',

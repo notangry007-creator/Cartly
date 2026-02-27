@@ -51,7 +51,7 @@ export default function ReturnScreen() {
   const onSubmit = async (data: F) => {
     if(!user) return;
     await createReturn({ orderId, userId:user.id, reason:data.reason, description:data.description, photos });
-    await addNotification(user.id,{title:'Return Request Submitted',body:'We will process your return within 24 hours.',type:'return',referenceId:orderId});
+    await addNotification({title:'Return Request Submitted',body:'We will process your return within 24 hours.',type:'return',referenceId:orderId});
     Alert.alert('Return Requested','Your return request has been submitted successfully.',[{text:'OK',onPress:()=>router.back()}]);
   };
   return (

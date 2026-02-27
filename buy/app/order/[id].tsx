@@ -54,7 +54,7 @@ export default function OrderDetailScreen() {
     if (!user || !order) return;
     const o = order;
     for (const item of o.items) {
-      await addItem(user.id, item.productId, item.variantId, item.quantity);
+      await addItem(item.productId, item.variantId, item.quantity);
     }
     router.push('/(tabs)/cart');
   }

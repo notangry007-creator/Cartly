@@ -32,8 +32,8 @@ export default function WishlistScreen() {
     if (!user) return;
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
-    await addItem(user.id, productId, product.variants[0].id, 1);
-    await toggle(user.id, productId);
+    await addItem(productId, product.variants[0].id, 1);
+    await toggle(productId);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     showSuccess('Moved to cart');
   }
@@ -41,8 +41,8 @@ export default function WishlistScreen() {
   async function moveAllToCart() {
     if (!user) return;
     for (const product of wishlistProducts) {
-      await addItem(user.id, product.id, product.variants[0].id, 1);
-      await toggle(user.id, product.id);
+      await addItem(product.id, product.variants[0].id, 1);
+      await toggle(product.id);
     }
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.push('/(tabs)/cart');
@@ -154,7 +154,7 @@ export default function WishlistScreen() {
                         onPress={() =>
                           Alert.alert('Remove', 'Remove from wishlist?', [
                             { text: 'Cancel' },
-                            { text: 'Remove', style: 'destructive', onPress: () => user && toggle(user.id, item.id) },
+                            { text: 'Remove', style: 'destructive', onPress: () => toggle(item.id) },
                           ])
                         }
                       >

@@ -32,7 +32,7 @@ export default function ProfileCompleteScreen() {
     if (user) {
       await loadCart(user.id);
       await loadNotifications(user.id);
-      await addNotification(user.id, { title:'Welcome to Buy!', body:'You have NPR 500 wallet bonus. Start shopping!', type:'wallet' });
+      await addNotification({ title:'Welcome to Buy!', body:'You have NPR 500 wallet bonus. Start shopping!', type:'wallet' });
     }
     if (!hasSelectedZone) router.replace('/onboarding');
     else router.replace('/(tabs)/home');

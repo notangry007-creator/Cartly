@@ -168,7 +168,7 @@ export default function ProductDetailScreen() {
     if (!inStock) return;
     setAdding(true);
     try {
-      await addItem(user.id, p.id, curVariantId, qty);
+      await addItem(p.id, curVariantId, qty);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showSuccess(`"${p.title.slice(0, 25)}..." added to cart`);
     } catch {
@@ -180,14 +180,14 @@ export default function ProductDetailScreen() {
 
   async function handleBuyNow() {
     if (!user) { router.push('/(auth)/login'); return; }
-    await addItem(user.id, p.id, curVariantId, qty);
+    await addItem(p.id, curVariantId, qty);
     router.push('/checkout');
   }
 
   function handleWishlist() {
     if (!user) { router.push('/(auth)/login'); return; }
     heartScale.value = withSequence(withSpring(1.4, { damping: 4 }), withSpring(1));
-    toggleWishlist(user.id, p.id);
+    toggleWishlist(p.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 

@@ -42,7 +42,7 @@ export default function NotificationsScreen() {
 
   async function handleRefresh() {
     setRefreshing(true);
-    if (user) await loadNotifications(user.id);
+    if (user) await loadNotifications(user.id); // loadNotifications still takes userId for initial load
     setRefreshing(false);
   }
   const auth = useAuthGuard();
@@ -55,7 +55,7 @@ export default function NotificationsScreen() {
         title="Notifications"
         right={
           notifications.some(n => !n.read) ? (
-            <TouchableOpacity onPress={() => user && markAllRead(user.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Mark all notifications as read">
+            <TouchableOpacity onPress={() => markAllRead()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Mark all notifications as read">
               <Text variant="labelSmall" style={s.markAll}>Mark all read</Text>
             </TouchableOpacity>
           ) : undefined
@@ -82,7 +82,7 @@ export default function NotificationsScreen() {
           <Animated.View entering={FadeInDown.delay(index * 40)}>
             <TouchableOpacity
               onPress={() => {
-                user && markRead(user.id, item.id);
+                markRead(item.id);
                 const getRoute = NOTIF_ROUTES[item.type] ?? NOTIF_ROUTES.system;
                 const route = getRoute(item.referenceId);
                 router.push(route as `/${string}`);

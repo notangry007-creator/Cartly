@@ -1,37 +1,82 @@
 import { create } from 'zustand';
 import { CartItem } from '../types';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
+import { useAuthStore } from './authStore';
+
+// Returns the AsyncStorage key for the active user's cart.
+// Returns null if no user is logged in (actions become no-ops).
+function cartKey(): string | null {
+  const userId = useAuthStore.getState().user?.id;
+  return userId ? `${STORAGE_KEYS.CART}_${userId}` : null;
+}
+
 interface CartState {
-  items: CartItem[]; isLoaded: boolean;
-  loadCart: (userId:string) => Promise<void>;
-  addItem: (userId:string, productId:string, variantId:string, qty?:number) => Promise<void>;
-  removeItem: (userId:string, productId:string, variantId:string) => Promise<void>;
-  updateQuantity: (userId:string, productId:string, variantId:string, qty:number) => Promise<void>;
-  clearCart: (userId:string) => Promise<void>;
+  items: CartItem[];
+  isLoaded: boolean;
+  /** Called once on app init / after login with the authenticated userId. */
+  loadCart: (userId: string) => Promise<void>;
+  addItem: (productId: string, variantId: string, qty?: number) => Promise<void>;
+  removeItem: (productId: string, variantId: string) => Promise<void>;
+  updateQuantity: (productId: string, variantId: string, qty: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   getItemCount: () => number;
 }
-const ck = (uid:string) => STORAGE_KEYS.CART+'_'+uid;
+
 export const useCartStore = create<CartState>((set, get) => ({
-  items: [], isLoaded: false,
-  loadCart: async (uid) => { const items = (await getItem<CartItem[]>(ck(uid))) ?? []; set({ items, isLoaded: true }); },
-  addItem: async (uid, pid, vid, qty=1) => {
+  items: [],
+  isLoaded: false,
+
+  loadCart: async (userId) => {
+    const key = `${STORAGE_KEYS.CART}_${userId}`;
+    const items = (await getItem<CartItem[]>(key)) ?? [];
+    set({ items, isLoaded: true });
+  },
+
+  addItem: async (productId, variantId, qty = 1) => {
+    const key = cartKey();
+    if (!key) return;
     const { items } = get();
-    const ex = items.find(i => i.productId===pid && i.variantId===vid);
-    const updated = ex
-      ? items.map(i => i.productId===pid && i.variantId===vid ? {...i,quantity:i.quantity+qty} : i)
-      : [...items, { productId:pid, variantId:vid, quantity:qty, addedAt:new Date().toISOString() }];
-    await setItem(ck(uid), updated); set({ items: updated });
+    const existing = items.find(i => i.productId === productId && i.variantId === variantId);
+    const updated = existing
+      ? items.map(i =>
+          i.productId === productId && i.variantId === variantId
+            ? { ...i, quantity: i.quantity + qty }
+            : i,
+        )
+      : [...items, { productId, variantId, quantity: qty, addedAt: new Date().toISOString() }];
+    await setItem(key, updated);
+    set({ items: updated });
   },
-  removeItem: async (uid, pid, vid) => {
-    const updated = get().items.filter(i => !(i.productId===pid && i.variantId===vid));
-    await setItem(ck(uid), updated); set({ items: updated });
+
+  removeItem: async (productId, variantId) => {
+    const key = cartKey();
+    if (!key) return;
+    const updated = get().items.filter(
+      i => !(i.productId === productId && i.variantId === variantId),
+    );
+    await setItem(key, updated);
+    set({ items: updated });
   },
-  updateQuantity: async (uid, pid, vid, qty) => {
-    const updated = qty<=0
-      ? get().items.filter(i => !(i.productId===pid && i.variantId===vid))
-      : get().items.map(i => i.productId===pid && i.variantId===vid ? {...i,quantity:qty} : i);
-    await setItem(ck(uid), updated); set({ items: updated });
+
+  updateQuantity: async (productId, variantId, qty) => {
+    const key = cartKey();
+    if (!key) return;
+    const updated =
+      qty <= 0
+        ? get().items.filter(i => !(i.productId === productId && i.variantId === variantId))
+        : get().items.map(i =>
+            i.productId === productId && i.variantId === variantId ? { ...i, quantity: qty } : i,
+          );
+    await setItem(key, updated);
+    set({ items: updated });
   },
-  clearCart: async (uid) => { await setItem(ck(uid), []); set({ items: [] }); },
-  getItemCount: () => get().items.reduce((s,i) => s+i.quantity, 0),
+
+  clearCart: async () => {
+    const key = cartKey();
+    if (!key) return;
+    await setItem(key, []);
+    set({ items: [] });
+  },
+
+  getItemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 }));
