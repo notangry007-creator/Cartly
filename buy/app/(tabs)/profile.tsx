@@ -63,6 +63,8 @@ export default function ProfileScreen() {
           <Divider/>
           <MI icon="heart-outline" label="Wishlist" onPress={()=>router.push('/wishlist')} badge={wishlistIds.length}/>
           <Divider/>
+          <MI icon="gift-outline" label="Refer & Earn" subtitle="Get NPR 100 per referral" onPress={()=>router.push('/referral')}/>
+          <Divider/>
           <MI icon="pricetag-outline" label="Offers & Coupons" onPress={()=>router.push('/offers')}/>
           <Divider/>
           <MI icon="refresh-outline" label="Returns & Refunds" onPress={()=>router.push('/returns')}/>

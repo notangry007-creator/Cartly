@@ -59,6 +59,8 @@ export interface Product {
   views: number;
   rating: number;
   totalReviews: number;
+  /** Low stock alert threshold — notify when stock falls at or below this value. Default: 10 */
+  lowStockThreshold: number;
 }
 
 export interface VariantFormData {

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Product, ProductFormData, ProductStatus } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { SEED_PRODUCTS } from '../data/seed';
+import { notifyLowStock } from '../utils/pushNotifications';
 
 const STORAGE_KEY = 'sell_products';
 
@@ -16,6 +17,7 @@ interface ProductState {
   updateStock: (id: string, stock: number) => Promise<void>;
   bulkUpdateStock: (updates: { id: string; stock: number }[]) => Promise<void>;
   incrementViews: (id: string) => void;
+  updateLowStockThreshold: (id: string, threshold: number) => Promise<void>;
 }
 
 function generateId(): string {
@@ -64,6 +66,7 @@ function formDataToProduct(data: ProductFormData, id: string, sellerId: string):
     views: 0,
     rating: 0,
     totalReviews: 0,
+    lowStockThreshold: 10, // default
   };
 }
 
@@ -148,6 +151,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
     );
     await setItem(STORAGE_KEY, products);
     set({ products });
+    // Fire low stock notification if threshold crossed
+    const product = get().products.find(p => p.id === id);
+    if (product && stock > 0 && stock <= (product.lowStockThreshold ?? 10)) {
+      notifyLowStock(product.title, stock).catch(() => {});
+    }
   },
 
   bulkUpdateStock: async (updates) => {
@@ -171,6 +179,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
     const products = get().products.map((p) =>
       p.id === id ? { ...p, views: p.views + 1 } : p,
     );
+    set({ products });
+  },
+
+  updateLowStockThreshold: async (id, threshold) => {
+    const products = get().products.map((p) =>
+      p.id === id ? { ...p, lowStockThreshold: threshold, updatedAt: new Date().toISOString() } : p,
+    );
+    await setItem(STORAGE_KEY, products);
     set({ products });
   },
 }));

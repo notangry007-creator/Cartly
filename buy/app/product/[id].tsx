@@ -514,6 +514,18 @@ export default function ProductDetailScreen() {
             ))}
           </View>
 
+          {/* Q&A section link */}
+          <TouchableOpacity
+            style={s.qaRow}
+            onPress={() => router.push({ pathname: '/product/qa', params: { id: product.id } })}
+            accessibilityRole="button"
+            accessibilityLabel="View product questions and answers"
+          >
+            <Ionicons name="chatbubble-outline" size={18} color={theme.colors.primary} />
+            <Text variant="labelMedium" style={s.qaLabel}>Questions & Answers</Text>
+            <Ionicons name="chevron-forward" size={16} color="#ccc" />
+          </TouchableOpacity>
+
           <View style={{ height: 100 }} />
         </View>
       </ScrollView>
@@ -639,6 +651,8 @@ const s = StyleSheet.create({
   trustSection: { borderRadius: RADIUS.lg, padding: SPACING.md, backgroundColor: '#F8FFF8', marginVertical: SPACING.sm },
   retPolicy: { marginTop: SPACING.sm, borderTopWidth: 1, borderTopColor: '#e8f5e9', paddingTop: SPACING.sm },
   descTxt: { color: '#555', lineHeight: 22 },
+  qaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, backgroundColor: '#fff', borderRadius: RADIUS.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: '#f0f0f0' },
+  qaLabel: { flex: 1, color: theme.colors.primary, fontWeight: '600' },
   reviewsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.sm },
   revCard: { marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: '#fafafa' },
   revHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 6 },

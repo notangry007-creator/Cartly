@@ -17,10 +17,11 @@ const STATUS_OPTIONS: ProductStatus[] = ['active', 'inactive', 'draft'];
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { products, updateStock, updateStatus, deleteProduct, incrementViews } = useProductStore();
+  const { products, updateStock, updateStatus, deleteProduct, incrementViews, updateLowStockThreshold } = useProductStore();
   const product = products.find((p) => p.id === id);
 
   const [stockInput, setStockInput] = useState('');
+  const [thresholdInput, setThresholdInput] = useState('');
 
   // Increment view count when product detail is opened
   useEffect(() => {
@@ -140,6 +141,38 @@ export default function ProductDetailScreen() {
               <Text style={styles.stockBtnText}>Update</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Low stock threshold */}
+          <View style={styles.thresholdRow}>
+            <View style={styles.thresholdInfo}>
+              <Text style={styles.thresholdLabel}>
+                <Ionicons name="notifications-outline" size={13} color={Colors.warning} /> Low Stock Alert
+              </Text>
+              <Text style={styles.thresholdSub}>
+                Notify when stock ≤ {product.lowStockThreshold ?? 10}
+              </Text>
+            </View>
+            <TextInput
+              style={styles.stockInput}
+              placeholder={String(product.lowStockThreshold ?? 10)}
+              placeholderTextColor={Colors.grey400}
+              keyboardType="number-pad"
+              value={thresholdInput}
+              onChangeText={setThresholdInput}
+            />
+            <TouchableOpacity
+              style={styles.stockBtn}
+              onPress={() => {
+                const n = parseInt(thresholdInput, 10);
+                if (isNaN(n) || n < 0) { Alert.alert('Invalid', 'Enter a valid threshold.'); return; }
+                updateLowStockThreshold(product.id, n);
+                setThresholdInput('');
+                Alert.alert('Saved', `Low stock alert set to ≤ ${n} units`);
+              }}
+            >
+              <Text style={styles.stockBtnText}>Set</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Status */}
@@ -204,6 +237,10 @@ const styles = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.text },
   statLabel: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
+  thresholdRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.border },
+  thresholdInfo: { flex: 1 },
+  thresholdLabel: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.text },
+  thresholdSub: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
   stockRow: { flexDirection: 'row', gap: Spacing.sm },
   stockInput: { flex: 1, height: 44, borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, fontSize: FontSize.md, color: Colors.text },
   stockBtn: { backgroundColor: Colors.primary, height: 44, paddingHorizontal: Spacing.lg, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center' },

@@ -10,6 +10,7 @@ import { useOrderStore } from '@/src/stores/orderStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { usePayoutStore } from '@/src/stores/payoutStore';
 import { useCouponStore } from '@/src/stores/couponStore';
+import { requestNotificationPermission } from '@/src/utils/pushNotifications';
 import { Colors } from '@/src/theme';
 
 // Keep the splash screen visible until all stores are hydrated
@@ -39,6 +40,8 @@ export default function RootLayout() {
       } finally {
         setReady(true);
         await SplashScreen.hideAsync();
+        // Request push notification permission after app is ready
+        requestNotificationPermission().catch(() => {});
       }
     }
     init();

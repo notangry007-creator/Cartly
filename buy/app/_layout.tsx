@@ -115,6 +115,7 @@ export default function RootLayout() {
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="product/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="product/reviews" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="product/qa" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="category/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="checkout/index" options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
                     <Stack.Screen name="order/[id]" options={{ animation: 'slide_from_right' }} />
@@ -137,6 +138,7 @@ export default function RootLayout() {
                     <Stack.Screen name="return/[id]" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="privacy" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="compare" options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+                    <Stack.Screen name="referral" options={{ animation: 'slide_from_right' }} />
                   </Stack>
                 </AppInitializer>
               </ToastProvider>
