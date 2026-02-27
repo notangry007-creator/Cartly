@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
 import { formatNPR, formatDate } from '@/src/utils/helpers';
 import { SEED_PAYOUTS } from '@/src/data/seed';
 import { PayoutStatus } from '@/src/types';
+import { useOrderStore } from '@/src/stores/orderStore';
 
 const STATUS_COLORS: Record<PayoutStatus, string> = {
   pending: Colors.warning,
@@ -17,6 +18,15 @@ const STATUS_COLORS: Record<PayoutStatus, string> = {
 
 export default function PayoutsScreen() {
   const router = useRouter();
+  const orders = useOrderStore((s) => s.orders);
+
+  // Available balance = delivered order revenue minus completed payouts
+  const deliveredRevenue = useMemo(
+    () => orders.filter((o) => o.status === 'delivered').reduce((sum, o) => sum + o.total, 0),
+    [orders],
+  );
+  const paidOut = SEED_PAYOUTS.filter((p) => p.status === 'completed').reduce((sum, p) => sum + p.amount, 0);
+  const availableBalance = Math.max(deliveredRevenue - paidOut, 0);
 
   function requestPayout() {
     Alert.alert('Request Payout', 'Payout requests are processed within 2 business days.', [
@@ -44,7 +54,7 @@ export default function PayoutsScreen() {
             {/* Balance card */}
             <View style={styles.balanceCard}>
               <Text style={styles.balanceLabel}>Available Balance</Text>
-              <Text style={styles.balanceAmount}>{formatNPR(75430)}</Text>
+              <Text style={styles.balanceAmount}>{formatNPR(availableBalance)}</Text>
               <TouchableOpacity style={styles.requestBtn} onPress={requestPayout}>
                 <Text style={styles.requestBtnText}>Request Payout</Text>
               </TouchableOpacity>

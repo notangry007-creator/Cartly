@@ -1,23 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import StatCard from '@/src/components/common/StatCard';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
-import { formatNPR } from '@/src/utils/helpers';
+import { formatNPR, percentageChange } from '@/src/utils/helpers';
+import { useOrderStore } from '@/src/stores/orderStore';
+import { useProductStore } from '@/src/stores/productStore';
 import { SEED_ANALYTICS } from '@/src/data/seed';
 
 const PERIODS = ['7 Days', '14 Days', '30 Days'] as const;
 type Period = (typeof PERIODS)[number];
 
+const ORDER_STATUSES = [
+  { label: 'Delivered', key: 'delivered' as const, color: Colors.statusDelivered },
+  { label: 'Shipped', key: 'shipped' as const, color: Colors.statusShipped },
+  { label: 'Confirmed', key: 'confirmed' as const, color: Colors.statusConfirmed },
+  { label: 'Pending', key: 'pending' as const, color: Colors.statusPending },
+  { label: 'Cancelled', key: 'cancelled' as const, color: Colors.statusCancelled },
+];
+
 export default function AnalyticsScreen() {
   const [period, setPeriod] = useState<Period>('14 Days');
+  const orders = useOrderStore((s) => s.orders);
+  const products = useProductStore((s) => s.products);
 
-  const analytics = SEED_ANALYTICS;
   const days = period === '7 Days' ? 7 : period === '14 Days' ? 14 : 30;
-  const shownStats = analytics.dailyStats.slice(-days);
 
+  // Compute live stats from orders
+  const totalRevenue = useMemo(
+    () => orders.filter((o) => o.status === 'delivered').reduce((sum, o) => sum + o.total, 0),
+    [orders],
+  );
+  const totalOrders = orders.length;
+
+  // Order breakdown counts
+  const breakdownCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const o of orders) counts[o.status] = (counts[o.status] ?? 0) + 1;
+    return counts;
+  }, [orders]);
+  const maxBreakdown = Math.max(...Object.values(breakdownCounts), 1);
+
+  // Top products by totalSold
+  const topProducts = useMemo(
+    () => [...products].sort((a, b) => b.totalSold - a.totalSold).slice(0, 3),
+    [products],
+  );
+
+  // Use seed daily stats for the chart (real-time daily revenue would need a backend)
+  const shownStats = SEED_ANALYTICS.dailyStats.slice(-days);
   const maxRevenue = Math.max(...shownStats.map((s) => s.revenue), 1);
 
   return (
@@ -40,15 +72,19 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
-        {/* Summary cards */}
+        {/* Summary cards — live data */}
         <View style={styles.statsRow}>
-          <StatCard label="Total Revenue" value={formatNPR(analytics.totalRevenue)} icon="cash-outline" iconColor={Colors.success} change={analytics.revenueChange} />
-          <StatCard label="Total Orders" value={String(analytics.totalOrders)} icon="receipt-outline" iconColor={Colors.info} change={analytics.ordersChange} />
+          <StatCard label="Total Revenue" value={formatNPR(totalRevenue)} icon="cash-outline" iconColor={Colors.success} />
+          <StatCard label="Total Orders" value={String(totalOrders)} icon="receipt-outline" iconColor={Colors.info} />
+        </View>
+        <View style={styles.statsRow}>
+          <StatCard label="Products" value={String(products.length)} icon="cube-outline" iconColor={Colors.accent} />
+          <StatCard label="Delivered" value={String(breakdownCounts['delivered'] ?? 0)} icon="checkmark-circle-outline" iconColor={Colors.success} />
         </View>
 
         {/* Revenue bar chart */}
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Revenue — Last {days} days</Text>
+          <Text style={styles.chartTitle}>Revenue trend — Last {days} days</Text>
           <View style={styles.chart}>
             {shownStats.map((stat, idx) => {
               const barHeight = Math.max((stat.revenue / maxRevenue) * 100, 4);
@@ -64,38 +100,39 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
-        {/* Top products */}
+        {/* Top products — live from store */}
         <Text style={styles.sectionTitle}>Top Products</Text>
-        {analytics.topProducts.map((tp, idx) => (
-          <View key={tp.productId} style={styles.topProductCard}>
-            <Text style={styles.rank}>#{idx + 1}</Text>
-            <Image source={{ uri: tp.productImage }} style={styles.productImage} contentFit="cover" />
-            <View style={styles.productInfo}>
-              <Text style={styles.productName} numberOfLines={1}>{tp.productName}</Text>
-              <Text style={styles.productStats}>{tp.totalSold} sold · {formatNPR(tp.revenue)}</Text>
+        {topProducts.length === 0 ? (
+          <Text style={styles.emptyText}>No product sales yet.</Text>
+        ) : (
+          topProducts.map((p, idx) => (
+            <View key={p.id} style={styles.topProductCard}>
+              <Text style={styles.rank}>#{idx + 1}</Text>
+              <Image source={{ uri: p.images[0] }} style={styles.productImage} contentFit="cover" />
+              <View style={styles.productInfo}>
+                <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
+                <Text style={styles.productStats}>{p.totalSold} sold · {formatNPR(p.price * p.totalSold)}</Text>
+              </View>
             </View>
-          </View>
-        ))}
+          ))
+        )}
 
-        {/* Orders by status */}
+        {/* Orders by status — live */}
         <Text style={styles.sectionTitle}>Order Breakdown</Text>
         <View style={styles.breakdownCard}>
-          {[
-            { label: 'Delivered', count: 1, color: Colors.statusDelivered },
-            { label: 'Shipped', count: 1, color: Colors.statusShipped },
-            { label: 'Confirmed', count: 1, color: Colors.statusConfirmed },
-            { label: 'Pending', count: 1, color: Colors.statusPending },
-            { label: 'Cancelled', count: 1, color: Colors.statusCancelled },
-          ].map((item) => (
-            <View key={item.label} style={styles.breakdownRow}>
-              <View style={[styles.dot, { backgroundColor: item.color }]} />
-              <Text style={styles.breakdownLabel}>{item.label}</Text>
-              <View style={styles.breakdownBarWrap}>
-                <View style={[styles.breakdownBar, { width: `${(item.count / 5) * 100}%`, backgroundColor: item.color + '60' }]} />
+          {ORDER_STATUSES.map((item) => {
+            const count = breakdownCounts[item.key] ?? 0;
+            return (
+              <View key={item.label} style={styles.breakdownRow}>
+                <View style={[styles.dot, { backgroundColor: item.color }]} />
+                <Text style={styles.breakdownLabel}>{item.label}</Text>
+                <View style={styles.breakdownBarWrap}>
+                  <View style={[styles.breakdownBar, { width: `${(count / maxBreakdown) * 100}%`, backgroundColor: item.color + '60' }]} />
+                </View>
+                <Text style={styles.breakdownCount}>{count}</Text>
               </View>
-              <Text style={styles.breakdownCount}>{item.count}</Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>

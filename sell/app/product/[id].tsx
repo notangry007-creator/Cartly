@@ -61,9 +61,14 @@ export default function ProductDetailScreen() {
           <Ionicons name="arrow-back" size={22} color={Colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{product.name}</Text>
-        <TouchableOpacity onPress={handleDelete} hitSlop={8}>
-          <Ionicons name="trash-outline" size={22} color={Colors.white} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => router.push(`/product/edit/${product.id}` as any)} hitSlop={8}>
+            <Ionicons name="create-outline" size={22} color={Colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDelete} hitSlop={8} style={{ marginLeft: Spacing.md }}>
+            <Ionicons name="trash-outline" size={22} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -174,6 +179,7 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   headerTitle: { flex: 1, color: Colors.white, fontSize: FontSize.lg, fontWeight: '700' },
   content: { paddingBottom: Spacing.xxl },
   imageScroll: { padding: Spacing.md, gap: Spacing.sm },
