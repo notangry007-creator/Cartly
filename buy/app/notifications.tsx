@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Text, Surface, Button, ActivityIndicator } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/src/stores/authStore';
@@ -10,10 +11,19 @@ import { timeAgo } from '@/src/utils/helpers';
 import ScreenHeader from '@/src/components/common/ScreenHeader';
 import { theme, SPACING, RADIUS } from '@/src/theme';
 import { useAuthGuard } from '@/src/hooks/useAuthGuard';
+import { NotificationType } from '@/src/types';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-const ICONS: Record<string, string> = { order:'receipt', wallet:'wallet', return:'return-up-back', promo:'pricetag', system:'notifications' };
-const COLORS: Record<string, string> = { order:'#1565C0', wallet:'#2E7D32', return:'#F57F17', promo:theme.colors.primary, system:'#666' };
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+const ICONS: Record<NotificationType, IoniconsName> = {
+  order: 'receipt',
+  wallet: 'wallet',
+  return: 'return-up-back',
+  promo: 'pricetag',
+  system: 'notifications',
+};
+const COLORS: Record<NotificationType, string> = { order:'#1565C0', wallet:'#2E7D32', return:'#F57F17', promo:theme.colors.primary, system:'#666' };
 
 const NOTIF_ROUTES: Record<string, (id?: string) => string> = {
   order: (id) => id ? `/order/${id}` : '/(tabs)/orders',
@@ -75,7 +85,7 @@ export default function NotificationsScreen() {
                 user && markRead(user.id, item.id);
                 const getRoute = NOTIF_ROUTES[item.type] ?? NOTIF_ROUTES.system;
                 const route = getRoute(item.referenceId);
-                router.push(route as any);
+                router.push(route as `/${string}`);
               }}
               activeOpacity={0.8}
               accessibilityRole="button"
@@ -84,7 +94,7 @@ export default function NotificationsScreen() {
             >
               <Surface style={[s.card, !item.read && s.cardUnread]} elevation={1}>
                 <View style={[s.iconWrap, { backgroundColor: (COLORS[item.type] ?? '#666') + '20' }]}>
-                  <Ionicons name={(ICONS[item.type] ?? 'notifications') as any} size={22} color={COLORS[item.type] ?? '#666'} />
+                  <Ionicons name={ICONS[item.type] ?? 'notifications'} size={22} color={COLORS[item.type] ?? '#666'} />
                 </View>
                 <View style={s.info}>
                   <View style={s.titleRow}>

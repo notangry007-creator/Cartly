@@ -7,10 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/stores/authStore';
 import { useReturns } from '@/src/hooks/useOrders';
 import { formatDate } from '@/src/utils/helpers';
+import { ReturnRequestStatus } from '@/src/types';
 import ScreenHeader from '@/src/components/common/ScreenHeader';
 import { theme, SPACING, RADIUS } from '@/src/theme';
 
-const STATUS_STEPS = ['pending','approved','picked','refunded'] as const;
+const STATUS_STEPS: ReturnRequestStatus[] = ['pending', 'approved', 'picked', 'refunded'];
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Request Submitted',
   approved: 'Return Approved',
@@ -77,7 +78,7 @@ export default function ReturnDetailScreen() {
           {!isRejected && (
             <View style={s.timeline}>
               {STATUS_STEPS.map((step, i) => {
-                const stepIdx = STATUS_STEPS.indexOf(returnReq.status as any);
+                const stepIdx = STATUS_STEPS.indexOf(returnReq.status);
                 const isDone = i <= stepIdx;
                 const isCurrent = i === stepIdx;
                 return (

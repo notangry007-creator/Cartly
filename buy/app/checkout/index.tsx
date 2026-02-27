@@ -47,7 +47,7 @@ export default function CheckoutScreen() {
   if(appliedCoupon) discount=appliedCoupon.type==='percent'?Math.min(Math.round(subtotal*appliedCoupon.value/100),appliedCoupon.maxDiscount??Infinity):appliedCoupon.value;
   const total = subtotal+shippingFee+codFee-discount;
   const selAddr = addresses.find(a=>a.id===selAddrId)??addresses.find(a=>a.isDefault);
-  if(!user||!items.length){router.replace('/(tabs)/cart' as any);return null;}
+  if(!user||!items.length){router.replace('/(tabs)/cart');return null;}
   function canProceed(){
     if(step===0) return !!selAddr;
     if(step===1) return !!dOpt;
@@ -72,7 +72,7 @@ export default function CheckoutScreen() {
           expectedDelivery: order.expectedDelivery,
           paymentMethod: payMethod,
         },
-      } as any);
+      });
     } catch(e){showError('Failed to place order. Please try again.');}
   }
   const dOpts = zone.deliveryOptions;

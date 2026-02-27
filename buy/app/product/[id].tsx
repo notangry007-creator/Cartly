@@ -13,6 +13,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { PinchGestureHandler, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import type { ComponentProps } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useProduct, useSeller, useReviews } from '@/src/hooks/useProducts';
 import { useCartStore } from '@/src/stores/cartStore';
@@ -67,10 +68,12 @@ function ZoomableGalleryImage({ uri, blurhash }: { uri: string; blurhash?: strin
   );
 }
 
-function TrustItem({ icon, text, ok }: { icon: string; text: string; ok: boolean }) {
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+function TrustItem({ icon, text, ok }: { icon: IoniconsName; text: string; ok: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 6 }}>
-      <Ionicons name={(ok ? icon : 'close-circle') as any} size={16} color={ok ? '#2E7D32' : '#B71C1C'} />
+      <Ionicons name={ok ? icon : 'close-circle'} size={16} color={ok ? '#2E7D32' : '#B71C1C'} />
       <Text variant="bodySmall" style={{ color: ok ? '#444' : '#B71C1C' }}>{text}</Text>
     </View>
   );

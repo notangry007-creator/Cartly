@@ -10,16 +10,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring,
   withTiming, interpolate, Extrapolation,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { setItem, STORAGE_KEYS } from '@/src/utils/storage';
 import { theme, SPACING, RADIUS } from '@/src/theme';
+import type { ComponentProps } from 'react';
 
 const { width: W, height: H } = Dimensions.get('window');
+
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 // ─── Slide data ───────────────────────────────────────────────────────────────
 interface Slide {
   id: string;
-  icon: string;
+  icon: IoniconsName;
   iconBg: string;
   iconColor: string;
   title: string;
@@ -67,7 +71,7 @@ const SLIDES: Slide[] = [
 ];
 
 // ─── Single slide ─────────────────────────────────────────────────────────────
-function TourSlide({ slide, index, scrollX }: { slide: Slide; index: number; scrollX: Animated.SharedValue<number> }) {
+function TourSlide({ slide, index, scrollX }: { slide: Slide; index: number; scrollX: SharedValue<number> }) {
   const inputRange = [(index - 1) * W, index * W, (index + 1) * W];
 
   const iconScale = useAnimatedStyle(() => ({
@@ -92,7 +96,7 @@ function TourSlide({ slide, index, scrollX }: { slide: Slide; index: number; scr
         <View style={[slide_s.circleLg, { backgroundColor: slide.iconBg }]} />
         <View style={[slide_s.circleMd, { backgroundColor: slide.iconBg, opacity: 0.5 }]} />
         <Animated.View style={[slide_s.iconWrap, { backgroundColor: slide.iconBg }, iconScale]}>
-          <Ionicons name={slide.icon as any} size={72} color={slide.iconColor} />
+          <Ionicons name={slide.icon} size={72} color={slide.iconColor} />
         </Animated.View>
       </View>
 
