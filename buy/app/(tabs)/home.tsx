@@ -134,6 +134,8 @@ export default function HomeScreen() {
                 return (
                   <TouchableOpacity
                     key={b.id} activeOpacity={0.9}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${b.title}${b.subtitle ? ': ' + b.subtitle : ''}`}
                     onPress={() => {
                       if (b.targetType === 'category' && b.targetId) router.push(`/category/${b.targetId}`);
                       else if (b.targetType === 'search') router.push({ pathname: '/search', params: { q: b.targetQuery } });
@@ -225,18 +227,35 @@ export default function HomeScreen() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Sticky top bar */}
       <View style={s.topBar}>
-        <TouchableOpacity style={s.zoneBtn} onPress={() => setShowZonePicker(true)}>
-          <Ionicons name="location" size={16} color={theme.colors.primary} />
+        <TouchableOpacity
+          style={s.zoneBtn}
+          onPress={() => setShowZonePicker(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Current delivery zone: ${curZone?.name ?? 'Select Zone'}. Tap to change`}
+        >
+          <Ionicons name="location" size={16} color={theme.colors.primary} accessibilityElementsHidden />
           <Text variant="labelMedium" style={s.zoneName} numberOfLines={1}>{curZone?.name ?? 'Select Zone'}</Text>
-          <Ionicons name="chevron-down" size={14} color="#666" />
+          <Ionicons name="chevron-down" size={14} color="#666" accessibilityElementsHidden />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/notifications')} hitSlop={8}>
-          <Ionicons name="notifications-outline" size={22} color="#333" />
+        <TouchableOpacity
+          onPress={() => router.push('/notifications')}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+        >
+          <Ionicons name="notifications-outline" size={22} color="#333" accessibilityElementsHidden />
         </TouchableOpacity>
       </View>
 
       {/* Search bar tap target */}
-      <TouchableOpacity onPress={() => router.push('/search')} style={s.searchWrap} activeOpacity={0.85}>
+      <TouchableOpacity
+        onPress={() => router.push('/search')}
+        style={s.searchWrap}
+        activeOpacity={0.85}
+        accessibilityRole="search"
+        accessibilityLabel="Search products"
+        accessibilityHint="Tap to open search"
+      >
         <View style={s.searchFake}>
           <Ionicons name="search" size={18} color="#999" />
           <Text style={s.searchPlaceholder}>Search products...</Text>
@@ -265,6 +284,9 @@ export default function HomeScreen() {
                 key={zone.id}
                 style={[s.zoneOpt, zoneId === zone.id && s.zoneOptA]}
                 onPress={async () => { await setZone(zone.id as ZoneId); setShowZonePicker(false); }}
+                accessibilityRole="radio"
+                accessibilityLabel={`${zone.name}, ${zone.codAvailable ? 'COD available' : 'Prepaid only'}`}
+                accessibilityState={{ checked: zoneId === zone.id }}
               >
                 <Ionicons name={zoneId === zone.id ? 'radio-button-on' : 'radio-button-off'} size={18} color={zoneId === zone.id ? theme.colors.primary : '#ccc'} />
                 <View style={{ marginLeft: SPACING.sm }}>

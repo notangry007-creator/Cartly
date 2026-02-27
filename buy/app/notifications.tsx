@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Text, Surface, Button, ActivityIndicator } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,7 +45,7 @@ export default function NotificationsScreen() {
         title="Notifications"
         right={
           notifications.some(n => !n.read) ? (
-            <TouchableOpacity onPress={() => user && markAllRead(user.id)} hitSlop={8}>
+            <TouchableOpacity onPress={() => user && markAllRead(user.id)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Mark all notifications as read">
               <Text variant="labelSmall" style={s.markAll}>Mark all read</Text>
             </TouchableOpacity>
           ) : undefined
@@ -56,6 +56,8 @@ export default function NotificationsScreen() {
         data={notifications}
         keyExtractor={i => i.id}
         contentContainerStyle={s.list}
+        // Approx card height: padding*2 + icon(44) + gap = ~76dp + SPACING.sm gap between items
+        getItemLayout={(_data, index) => ({ length: 84, offset: (84 + SPACING.sm) * index + SPACING.md, index })}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />}
         ListEmptyComponent={
           <View style={s.empty}>
@@ -76,6 +78,9 @@ export default function NotificationsScreen() {
                 router.push(route as any);
               }}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.read ? '' : 'Unread notification: '}${item.title}. ${item.body}`}
+              accessibilityState={{ selected: !item.read }}
             >
               <Surface style={[s.card, !item.read && s.cardUnread]} elevation={1}>
                 <View style={[s.iconWrap, { backgroundColor: (COLORS[item.type] ?? '#666') + '20' }]}>

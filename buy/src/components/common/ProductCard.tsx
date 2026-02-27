@@ -18,10 +18,17 @@ interface Props {
   onPress: () => void;
 }
 
+// Low-stock threshold: show urgency badge when ≤ 5 units across all variants
+function getTotalStock(product: Product): number {
+  return product.variants.reduce((sum, v) => sum + v.stock, 0);
+}
+
 function ProductCard({ product, zoneId, onPress }: Props) {
   const discount = getDiscountPercent(product.basePrice, product.baseMrp);
   const eta = getBestETA(product, zoneId);
   const cod = product.codAvailableZones.includes(zoneId);
+  const totalStock = getTotalStock(product);
+  const isLowStock = totalStock > 0 && totalStock <= 5;
 
   const { user } = useAuthStore();
   const { isWishlisted, toggle } = useWishlistStore();
@@ -37,8 +44,17 @@ function ProductCard({ product, zoneId, onPress }: Props) {
     toggle(user.id, product.id);
   }
 
+  const accessibilityHint = `${product.title}, ${formatNPR(product.basePrice)}${discount > 0 ? `, ${discount}% off` : ''}, rated ${product.rating} out of 5, ${cod ? 'COD available' : 'prepaid only'}, ${eta} delivery`;
+
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={s.wrap}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={s.wrap}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${product.title}`}
+      accessibilityHint={accessibilityHint}
+    >
       <Surface style={s.card} elevation={1}>
         <View style={s.imgWrap}>
           <Image
@@ -47,19 +63,33 @@ function ProductCard({ product, zoneId, onPress }: Props) {
             contentFit="cover"
             transition={300}
             placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+            accessibilityLabel={`Product image for ${product.title}`}
+            accessibilityRole="image"
           />
           {discount > 0 && (
-            <View style={s.disc}>
+            <View style={s.disc} accessibilityLabel={`${discount}% discount`}>
               <Text style={s.discTxt}>{discount}% off</Text>
             </View>
           )}
           {product.isAuthenticated && (
-            <View style={s.auth}>
+            <View style={s.auth} accessibilityLabel="Authenticity verified">
               <Ionicons name="shield-checkmark" size={10} color="#fff" />
             </View>
           )}
-          {/* Heart / Wishlist button */}
-          <TouchableOpacity style={s.heartBtn} onPress={handleWishlist} hitSlop={6}>
+          {/* Low-stock urgency badge */}
+          {isLowStock && (
+            <View style={s.urgency} accessibilityLabel={`Only ${totalStock} left in stock`}>
+              <Text style={s.urgencyTxt}>Only {totalStock} left!</Text>
+            </View>
+          )}
+          {/* Heart / Wishlist button — 44×44dp touch target */}
+          <TouchableOpacity
+            style={s.heartBtn}
+            onPress={handleWishlist}
+            accessibilityRole="button"
+            accessibilityLabel={wishlisted ? `Remove ${product.title} from wishlist` : `Add ${product.title} to wishlist`}
+            accessibilityState={{ selected: wishlisted }}
+          >
             <Animated.View style={heartStyle}>
               <Ionicons
                 name={wishlisted ? 'heart' : 'heart-outline'}
@@ -70,18 +100,44 @@ function ProductCard({ product, zoneId, onPress }: Props) {
           </TouchableOpacity>
         </View>
         <View style={s.info}>
-          <Text variant="labelMedium" numberOfLines={2} style={s.title}>{product.title}</Text>
+          <Text
+            variant="labelMedium"
+            numberOfLines={2}
+            style={s.title}
+            accessibilityRole="text"
+          >
+            {product.title}
+          </Text>
           <View style={s.priceRow}>
-            <Text variant="titleSmall" style={s.price}>{formatNPR(product.basePrice)}</Text>
-            {discount > 0 && <Text style={s.mrp}>{formatNPR(product.baseMrp)}</Text>}
+            <Text
+              variant="titleSmall"
+              style={s.price}
+              accessibilityLabel={`Price: ${formatNPR(product.basePrice)}`}
+            >
+              {formatNPR(product.basePrice)}
+            </Text>
+            {discount > 0 && (
+              <Text
+                style={s.mrp}
+                accessibilityLabel={`Original price: ${formatNPR(product.baseMrp)}`}
+              >
+                {formatNPR(product.baseMrp)}
+              </Text>
+            )}
           </View>
-          <View style={s.ratingRow}>
-            <Ionicons name="star" size={12} color="#FFA000" />
+          <View style={s.ratingRow} accessibilityLabel={`Rating: ${product.rating} out of 5, ${product.totalReviews} reviews`}>
+            <Ionicons name="star" size={12} color="#FFA000" accessibilityElementsHidden />
             <Text variant="labelSmall" style={s.rating}>{product.rating} ({product.totalReviews})</Text>
           </View>
           <View style={s.badges}>
-            {cod && <View style={s.codBadge}><Text style={s.codTxt}>COD</Text></View>}
-            <Text variant="labelSmall" style={s.eta}>{eta}</Text>
+            {cod && (
+              <View style={s.codBadge} accessibilityLabel="Cash on delivery available">
+                <Text style={s.codTxt}>COD</Text>
+              </View>
+            )}
+            <Text variant="labelSmall" style={s.eta} accessibilityLabel={`Estimated delivery: ${eta}`}>
+              {eta}
+            </Text>
           </View>
         </View>
       </Surface>
@@ -101,13 +157,19 @@ const s = StyleSheet.create({
   },
   discTxt: { color: '#fff', fontSize: 10, fontWeight: '700' },
   auth: {
-    position: 'absolute', top: 6, right: 30,
+    position: 'absolute', top: 6, right: 44,
     backgroundColor: '#2E7D32', padding: 3, borderRadius: 999,
   },
+  urgency: {
+    position: 'absolute', bottom: 4, left: 4,
+    backgroundColor: '#FF6F00',
+    paddingHorizontal: 5, paddingVertical: 2, borderRadius: RADIUS.sm,
+  },
+  urgencyTxt: { color: '#fff', fontSize: 9, fontWeight: '700' },
+  // 44×44dp minimum touch target
   heartBtn: {
-    position: 'absolute', top: 4, right: 4,
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    position: 'absolute', top: 0, right: 0,
+    width: 44, height: 44,
     justifyContent: 'center', alignItems: 'center',
   },
   info: { padding: SPACING.sm },

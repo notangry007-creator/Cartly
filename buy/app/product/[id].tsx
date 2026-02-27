@@ -168,8 +168,16 @@ export default function ProductDetailScreen() {
             </TouchableOpacity>
           </Animated.View>
           <TouchableOpacity
-            onPress={() => Share.share({ message: `${product.title} on Buy app!\nPrice: ${formatNPR(variant?.price ?? 0)}\nbuy://product/${product.id}` })}
-            style={s.hBtn} accessibilityLabel="Share product"
+            onPress={() => {
+              const deepLink = `buy://product/${product.id}`;
+              const webFallback = `https://buy.app/product/${product.id}`;
+              Share.share({
+                title: product.title,
+                message: `Check out "${product.title}" on Buy!\nPrice: ${formatNPR(variant?.price ?? 0)}${(getDiscountPercent(variant?.price ?? 0, variant?.mrp ?? 0)) > 0 ? ` (${getDiscountPercent(variant?.price ?? 0, variant?.mrp ?? 0)}% off)` : ''}\n\nOpen in Buy app: ${deepLink}\nOr visit: ${webFallback}`,
+                url: webFallback,
+              });
+            }}
+            style={s.hBtn} accessibilityRole="button" accessibilityLabel={`Share ${product.title}`}
           >
             <Ionicons name="share-social-outline" size={22} color="#333" />
           </TouchableOpacity>

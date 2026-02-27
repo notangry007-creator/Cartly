@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, AppState, AppStateStatus } from 'react-native';
 import { Text, Surface } from 'react-native-paper';
-import MapView, { Marker, Polyline, Region } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '../../types';
 import { theme, SPACING, RADIUS } from '../../theme';
@@ -45,8 +45,40 @@ export default function DeliveryTrackingMap({ order }: Props) {
 
   useEffect(() => {
     if (!showMap) return;
-    const interval = setInterval(() => setTick(t => t + 1), 3000);
-    return () => clearInterval(interval);
+
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let appStateStatus: AppStateStatus = AppState.currentState;
+
+    function startTicking() {
+      if (!interval) {
+        interval = setInterval(() => setTick(t => t + 1), 3000);
+      }
+    }
+
+    function stopTicking() {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    }
+
+    // Only tick when app is in foreground
+    if (appStateStatus === 'active') startTicking();
+
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      appStateStatus = nextState;
+      if (nextState === 'active') {
+        startTicking();
+      } else {
+        // App backgrounded or inactive — pause the interval to save resources
+        stopTicking();
+      }
+    });
+
+    return () => {
+      stopTicking();
+      sub.remove();
+    };
   }, [showMap]);
 
   if (!showMap) return null;

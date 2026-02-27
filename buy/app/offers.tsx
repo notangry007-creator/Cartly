@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Clipboard } from 'react-native';
-import { Text, Surface, Chip } from 'react-native-paper';
+import { View, StyleSheet, FlatList, TouchableOpacity, Clipboard, Alert } from 'react-native';
+import { Text, Surface, Chip, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import { COUPONS } from '../src/data/seed';
 import { formatNPR, formatDate } from '../src/utils/helpers';
 import { useToast } from '../src/context/ToastContext';
 import ScreenHeader from '../src/components/common/ScreenHeader';
+import { useCartStore } from '../src/stores/cartStore';
+import { useAuthStore } from '../src/stores/authStore';
 import { theme, SPACING, RADIUS } from '../src/theme';
 
 export default function OffersScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { showSuccess } = useToast();
+  const { user } = useAuthStore();
+  const { items: cartItems } = useCartStore();
   const [copied, setCopied] = useState<string | null>(null);
 
   function copyCoupon(code: string) {
@@ -21,6 +27,17 @@ export default function OffersScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     showSuccess(`Coupon code "${code}" copied!`);
     setTimeout(() => setCopied(null), 2000);
+  }
+
+  function applyToCart(code: string) {
+    if (cartItems.length === 0) {
+      Alert.alert('Empty Cart', 'Add items to your cart first, then come back to apply a coupon.');
+      return;
+    }
+    // Navigate to cart with the coupon pre-filled via URL param
+    router.push({ pathname: '/(tabs)/cart', params: { applyCoupon: code } });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showSuccess(`Coupon "${code}" will be applied at checkout`);
   }
 
   const activeCoupons = COUPONS.filter(c => new Date(c.expiresAt) > new Date());
@@ -53,15 +70,32 @@ export default function OffersScreen() {
               </View>
               <View style={s.dividerVertical} />
               <View style={s.cardRight}>
-                <View style={s.codeRow}>
-                  <View style={s.codeBadge}>
-                    <Text style={s.codeText}>{item.code}</Text>
-                  </View>
-                  <TouchableOpacity style={[s.copyBtn, isCopied && s.copyBtnDone]} onPress={() => copyCoupon(item.code)}>
-                    <Ionicons name={isCopied ? 'checkmark' : 'copy'} size={14} color={isCopied ? '#2E7D32' : theme.colors.primary} />
-                    <Text style={[s.copyTxt, isCopied && s.copyTxtDone]}>{isCopied ? 'Copied!' : 'Copy'}</Text>
-                  </TouchableOpacity>
-                </View>
+                 <View style={s.codeRow}>
+                   <View style={s.codeBadge}>
+                     <Text style={s.codeText}>{item.code}</Text>
+                   </View>
+                   <TouchableOpacity
+                     style={[s.copyBtn, isCopied && s.copyBtnDone]}
+                     onPress={() => copyCoupon(item.code)}
+                     accessibilityRole="button"
+                     accessibilityLabel={`Copy coupon code ${item.code}`}
+                   >
+                     <Ionicons name={isCopied ? 'checkmark' : 'copy'} size={14} color={isCopied ? '#2E7D32' : theme.colors.primary} />
+                     <Text style={[s.copyTxt, isCopied && s.copyTxtDone]}>{isCopied ? 'Copied!' : 'Copy'}</Text>
+                   </TouchableOpacity>
+                 </View>
+                 {/* Apply to cart button */}
+                 <Button
+                   mode="contained"
+                   compact
+                   onPress={() => applyToCart(item.code)}
+                   style={s.applyBtn}
+                   contentStyle={s.applyBtnContent}
+                   accessibilityRole="button"
+                   accessibilityLabel={`Apply coupon ${item.code} to cart`}
+                 >
+                   Apply to Cart
+                 </Button>
                 <Text variant="bodySmall" style={s.desc}>{discountStr}</Text>
                 <Text variant="labelSmall" style={s.minSpend}>Min. spend: {formatNPR(item.minSpend)}</Text>
                 {item.validZones && (
@@ -107,4 +141,6 @@ const s = StyleSheet.create({
   tagsRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap' },
   zoneTag: { backgroundColor: '#E3F2FD' },
   expiry: { color: '#aaa' },
+  applyBtn: { marginTop: SPACING.xs, alignSelf: 'flex-start' },
+  applyBtnContent: { paddingHorizontal: SPACING.sm, paddingVertical: 0 },
 });

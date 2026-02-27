@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { PRODUCTS, REVIEWS, SELLERS, CATEGORIES } from '../data/seed';
 import { Review, ZoneId, DeliveryOption } from '../types';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
@@ -10,8 +11,33 @@ export const useProducts = (filters?: {
   isFastDelivery?:boolean; isAuthenticated?:boolean; inStock?:boolean;
   minPrice?:number; maxPrice?:number; minRating?:number; codAvailable?:boolean;
   deliverySpeed?:DeliveryOption; sortBy?:'relevance'|'price_asc'|'price_desc'|'rating'|'fastest';
-}) => useQuery({
-  queryKey: ['products', filters],
+}) => {
+  // Stable query key: serialize each primitive so object reference changes don't
+  // trigger unnecessary React Query cache misses on every render.
+  const stableKey = useMemo(() => [
+    'products',
+    filters?.categoryId ?? null,
+    filters?.subcategoryId ?? null,
+    filters?.zoneId ?? null,
+    filters?.search ?? null,
+    filters?.isFastDelivery ?? null,
+    filters?.isAuthenticated ?? null,
+    filters?.inStock ?? null,
+    filters?.minPrice ?? null,
+    filters?.maxPrice ?? null,
+    filters?.minRating ?? null,
+    filters?.codAvailable ?? null,
+    filters?.deliverySpeed ?? null,
+    filters?.sortBy ?? null,
+  ], [
+    filters?.categoryId, filters?.subcategoryId, filters?.zoneId, filters?.search,
+    filters?.isFastDelivery, filters?.isAuthenticated, filters?.inStock,
+    filters?.minPrice, filters?.maxPrice, filters?.minRating, filters?.codAvailable,
+    filters?.deliverySpeed, filters?.sortBy,
+  ]);
+
+  return useQuery({
+  queryKey: stableKey,
   queryFn: async () => {
     await delay();
     let p = [...PRODUCTS];
@@ -35,6 +61,7 @@ export const useProducts = (filters?: {
     return p;
   }, staleTime: 30000,
 });
+};
 
 export const useProduct = (id: string) => useQuery({
   queryKey: ['product', id],

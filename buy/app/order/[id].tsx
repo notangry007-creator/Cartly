@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrder, useCancelOrder, useUpdateOrderStatus } from '../../src/hooks/useOrders';
+import { useCartStore } from '../../src/stores/cartStore';
 import { formatDate, formatDateTime, formatNPR } from '../../src/utils/helpers';
 import { OrderStatus } from '../../src/types';
 import ScreenHeader from '../../src/components/common/ScreenHeader';
@@ -35,11 +36,21 @@ export default function OrderDetailScreen() {
   const { data: order, isLoading } = useOrder(user?.id??'', id);
   const { mutateAsync: cancelOrder, isPending: cancelling } = useCancelOrder();
   const { mutateAsync: updateStatus } = useUpdateOrderStatus();
+  const { addItem } = useCartStore();
   if (isLoading) return <View style={[s.container,{paddingTop:insets.top,justifyContent:'center',alignItems:'center'}]}><ActivityIndicator size="large" color={theme.colors.primary}/></View>;
   if (!order) return <View style={[s.container,{paddingTop:insets.top}]}><ScreenHeader title="Order"/><View style={{flex:1,justifyContent:'center',alignItems:'center'}}><Text>Order not found</Text></View></View>;
   const canCancel = ['pending','confirmed'].includes(order.status);
   const canReturn = order.status==='delivered';
+  const canBuyAgain = ['delivered','cancelled','refunded'].includes(order.status);
   const canSim = !['delivered','cancelled','refunded'].includes(order.status);
+
+  async function handleBuyAgain() {
+    if (!user) return;
+    for (const item of order.items) {
+      await addItem(user.id, item.productId, item.variantId, item.quantity);
+    }
+    router.push('/(tabs)/cart');
+  }
   const tlStatuses = order.timeline.map(t=>t.status);
   return (
     <View style={[s.container,{paddingTop:insets.top}]}>
@@ -72,7 +83,7 @@ export default function OrderDetailScreen() {
         <Surface style={s.section} elevation={1}>
           <Text variant="titleSmall" style={s.secTitle}>Items</Text>
           {order.items.map(item=>(
-            <TouchableOpacity key={item.productId+item.variantId} style={s.itemRow} onPress={()=>router.push('/product/'+item.productId)}>
+            <TouchableOpacity key={item.productId+item.variantId} style={s.itemRow} onPress={()=>router.push('/product/'+item.productId)} accessibilityRole="button" accessibilityLabel={`View product: ${item.title}, quantity ${item.quantity}`}>
               <Image source={{uri:item.imageUrl}} style={s.itemImg} contentFit="cover"/>
               <View style={s.itemInfo}><Text variant="labelMedium" style={{color:'#333',lineHeight:16}} numberOfLines={2}>{item.title}</Text><Text variant="labelSmall" style={{color:'#888'}}>{item.variantLabel}</Text><Text variant="labelSmall" style={{color:'#aaa'}}>Qty: {item.quantity}</Text></View>
               <Text variant="titleSmall" style={{fontWeight:'700',color:'#222'}}>{formatNPR(item.price*item.quantity)}</Text>
@@ -94,13 +105,26 @@ export default function OrderDetailScreen() {
           <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:4}}><Text variant="bodySmall" style={{color:'#555'}}>Method</Text><Text variant="bodySmall">{order.paymentMethod==='cod'?'Cash on Delivery':'Buy Wallet'}</Text></View>
         </Surface>
         <View style={s.actions}>
-          {canCancel&&<Button mode="outlined" onPress={()=>Alert.alert('Cancel Order','Are you sure?',[{text:'No'},{text:'Yes',style:'destructive',onPress:()=>cancelOrder({userId:user!.id,orderId:order.id})}])} loading={cancelling} textColor={theme.colors.error}>Cancel Order</Button>}
-          {canReturn&&<Button mode="outlined" onPress={()=>router.push('/order/return/'+order.id)} icon="return-up-back">Request Return</Button>}
+          {canCancel&&<Button mode="outlined" onPress={()=>Alert.alert('Cancel Order','Are you sure?',[{text:'No'},{text:'Yes',style:'destructive',onPress:()=>cancelOrder({userId:user!.id,orderId:order.id})}])} loading={cancelling} textColor={theme.colors.error} accessibilityRole="button" accessibilityLabel="Cancel this order">Cancel Order</Button>}
+          {canReturn&&<Button mode="outlined" onPress={()=>router.push('/order/return/'+order.id)} icon="return-up-back" accessibilityRole="button" accessibilityLabel="Request a return for this order">Request Return</Button>}
+          {canBuyAgain && (
+            <Button
+              mode="outlined"
+              onPress={handleBuyAgain}
+              icon="refresh"
+              accessibilityRole="button"
+              accessibilityLabel="Buy again — add all items from this order to cart"
+            >
+              Buy Again
+            </Button>
+          )}
           {order.canReview && (
           <Button
             mode="contained"
             onPress={() => router.push({ pathname: '/order/review', params: { orderId: order.id } })}
             icon="star"
+            accessibilityRole="button"
+            accessibilityLabel={`Write reviews for ${order.items.length} product${order.items.length > 1 ? 's' : ''}`}
           >
             Write Reviews ({order.items.length} product{order.items.length > 1 ? 's' : ''})
           </Button>

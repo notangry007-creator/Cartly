@@ -34,16 +34,23 @@ export default function SearchScreen() {
   const { data: products=[], isLoading } = useProducts({ search:debQ||undefined, zoneId, isFastDelivery:fast||undefined, isAuthenticated:verified||undefined, inStock:inStock||undefined, minRating, codAvailable:codOnly||undefined, sortBy, minPrice, maxPrice });
   async function doSearch(q: string) {
     setQuery(q); setDebQ(q);
-    if(q.trim()){const u=[q,...recent.filter(r=>r!==q)].slice(0,8);setRecent(u);await setItem(STORAGE_KEYS.RECENT_SEARCHES,u);}
+    if(q.trim()){
+      // Case-insensitive deduplication: remove any existing entry that matches regardless of case
+      const qLower = q.toLowerCase();
+      const deduped = recent.filter(r => r.toLowerCase() !== qLower);
+      const u = [q, ...deduped].slice(0, 8);
+      setRecent(u);
+      await setItem(STORAGE_KEYS.RECENT_SEARCHES, u);
+    }
   }
   const SORTS: {v:Sort;l:string}[] = [{v:'relevance',l:'Relevance'},{v:'price_asc',l:'Price Low-High'},{v:'price_desc',l:'Price High-Low'},{v:'rating',l:'Top Rated'},{v:'fastest',l:'Fastest'}];
   const showSug = !debQ;
   return (
     <View style={[s.container,{paddingTop:insets.top}]}>
       <View style={s.searchHeader}>
-        <TouchableOpacity onPress={()=>router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={22} color="#333"/></TouchableOpacity>
+        <TouchableOpacity onPress={()=>router.back()} style={s.backBtn} accessibilityRole="button" accessibilityLabel="Go back"><Ionicons name="arrow-back" size={22} color="#333"/></TouchableOpacity>
         <Searchbar placeholder="Search products..." value={query} onChangeText={setQuery} onSubmitEditing={()=>doSearch(query)} style={s.searchBar} autoFocus onClearIconPress={()=>{setQuery('');setDebQ('');}}/>
-        <TouchableOpacity onPress={()=>setShowFilters(!showFilters)} style={s.filterBtn}><Ionicons name="options" size={22} color={showFilters?theme.colors.primary:'#333'}/></TouchableOpacity>
+        <TouchableOpacity onPress={()=>setShowFilters(!showFilters)} style={s.filterBtn} accessibilityRole="button" accessibilityLabel={showFilters ? 'Hide filters' : 'Show filters'} accessibilityState={{ expanded: showFilters }}><Ionicons name="options" size={22} color={showFilters?theme.colors.primary:'#333'}/></TouchableOpacity>
       </View>
       {showFilters&&(
         <View style={s.filtersPanel}>

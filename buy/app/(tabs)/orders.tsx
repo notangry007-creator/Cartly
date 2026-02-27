@@ -39,13 +39,14 @@ export default function OrdersScreen() {
       <View style={s.header}><Text variant="headlineSmall" style={s.headerTitle}>My Orders</Text></View>
       <View style={s.filters}>
         {(['all','active','delivered','cancelled'] as Filter[]).map(f=>(
-          <Chip key={f} selected={filter===f} onPress={()=>setFilter(f)} style={[s.chip,filter===f&&s.chipA]} textStyle={filter===f?s.chipTxtA:s.chipTxt} compact>{f.charAt(0).toUpperCase()+f.slice(1)}</Chip>
+          <Chip key={f} selected={filter===f} onPress={()=>setFilter(f)} style={[s.chip,filter===f&&s.chipA]} textStyle={filter===f?s.chipTxtA:s.chipTxt} compact accessibilityRole="button" accessibilityLabel={`Filter by ${f}`} accessibilityState={{selected: filter===f}}>{f.charAt(0).toUpperCase()+f.slice(1)}</Chip>
         ))}
       </View>
       <FlatList data={filtered} keyExtractor={i=>i.id} contentContainerStyle={s.list} refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[theme.colors.primary]}/>}
+        getItemLayout={(_data, index) => ({ length: 136, offset: 136 * index + SPACING.md, index })}
         ListEmptyComponent={<View style={s.empty}><Ionicons name="receipt-outline" size={64} color="#ccc"/><Text variant="titleMedium" style={s.emptyTitle}>No orders yet</Text><Button mode="contained" onPress={()=>router.push('/(tabs)/home')}>Start Shopping</Button></View>}
         renderItem={({item})=>(
-          <TouchableOpacity onPress={()=>router.push('/order/'+item.id)} activeOpacity={0.8}>
+          <TouchableOpacity onPress={()=>router.push('/order/'+item.id)} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={`Order ${item.id.slice(-8).toUpperCase()}, ${STATUS_LABELS[item.status]}, total ${formatNPR(item.total)}`}>
             <Surface style={s.card} elevation={1}>
               <View style={s.cardHeader}>
                 <Text variant="labelMedium" style={s.orderId}>#{item.id.slice(-8).toUpperCase()}</Text>

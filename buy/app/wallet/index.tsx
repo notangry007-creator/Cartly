@@ -33,6 +33,8 @@ export default function WalletScreen() {
           icon="plus"
           style={s.topupBtn}
           textColor="#fff"
+          accessibilityRole="button"
+          accessibilityLabel="Add money to wallet"
         >
           Add Money
         </Button>
@@ -45,6 +47,8 @@ export default function WalletScreen() {
           data={txs}
           keyExtractor={i => i.id}
           contentContainerStyle={s.list}
+          // txCard height: padding*2(24) + content(40) + gap = ~72dp
+          getItemLayout={(_data, index) => ({ length: 72, offset: (72 + SPACING.sm) * index + SPACING.sm, index })}
           refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} colors={[theme.colors.primary]} />}
           ListEmptyComponent={
             <View style={s.empty}>
@@ -54,7 +58,12 @@ export default function WalletScreen() {
           }
           renderItem={({ item, index }) => (
             <Animated.View entering={FadeInDown.delay(index * 40)}>
-              <Surface style={s.txCard} elevation={1}>
+              <Surface
+                style={s.txCard}
+                elevation={1}
+                accessibilityRole="text"
+                accessibilityLabel={`${item.type === 'credit' ? 'Received' : 'Spent'} ${formatNPR(item.amount)}: ${item.description}, balance after: ${formatNPR(item.balance)}`}
+              >
                 <View style={[s.txIcon, { backgroundColor: item.type === 'credit' ? '#E8F5E9' : '#FFEBEE' }]}>
                   <Ionicons name={item.type === 'credit' ? 'arrow-down' : 'arrow-up'} size={18} color={item.type === 'credit' ? '#2E7D32' : '#B71C1C'} />
                 </View>
