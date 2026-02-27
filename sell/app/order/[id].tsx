@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -24,8 +24,10 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { orders, updateStatus } = useOrderStore();
+  const { orders, updateStatus, addNote } = useOrderStore();
   const order = orders.find((o) => o.id === id);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState('');
 
   if (!order) {
     return (
@@ -72,17 +74,30 @@ export default function OrderDetailScreen() {
             <OrderStatusBadge status={order.status} />
             <Text style={styles.date}>{formatDateTime(order.createdAt)}</Text>
           </View>
-          {order.note && (
-            <View style={styles.noteWrap}>
-              <Ionicons name="chatbubble-outline" size={14} color={Colors.textSecondary} />
-              <Text style={styles.note}>{order.note}</Text>
-            </View>
-          )}
+          <TouchableOpacity
+            style={styles.noteWrap}
+            onPress={() => { setNoteText(order.note ?? ''); setShowNoteModal(true); }}
+          >
+            <Ionicons name="chatbubble-outline" size={14} color={Colors.textSecondary} />
+            <Text style={[styles.note, !order.note && { color: Colors.grey400, fontStyle: 'italic' }]}>
+              {order.note || 'Add a note for this order...'}
+            </Text>
+            <Ionicons name="pencil-outline" size={13} color={Colors.grey400} />
+          </TouchableOpacity>
         </View>
 
         {/* Buyer */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Buyer</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm }}>
+            <Text style={styles.cardTitle}>Buyer</Text>
+            <TouchableOpacity
+              style={styles.msgBtn}
+              onPress={() => router.push({ pathname: '/chat', params: { orderId: order.id } } as any)}
+            >
+              <Ionicons name="chatbubble-outline" size={14} color={Colors.primary} />
+              <Text style={styles.msgBtnTxt}>Message</Text>
+            </TouchableOpacity>
+          </View>
           <InfoRow icon="person-outline" label={order.buyerName} />
           <InfoRow icon="call-outline" label={order.buyerPhone} />
           <InfoRow icon="location-outline" label={order.buyerAddress} />
@@ -140,6 +155,39 @@ export default function OrderDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Note editing modal */}
+      <Modal visible={showNoteModal} transparent animationType="slide" onRequestClose={() => setShowNoteModal(false)}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Order Note</Text>
+              <TouchableOpacity onPress={() => setShowNoteModal(false)} hitSlop={8}>
+                <Ionicons name="close" size={22} color={Colors.grey700} />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.noteInput}
+              placeholder="Add a note for this order (e.g. special instructions, follow-up needed)..."
+              placeholderTextColor={Colors.grey400}
+              value={noteText}
+              onChangeText={setNoteText}
+              multiline
+              numberOfLines={4}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={styles.saveNoteBtn}
+              onPress={() => {
+                if (order) addNote(order.id, noteText.trim());
+                setShowNoteModal(false);
+              }}
+            >
+              <Text style={styles.saveNoteTxt}>Save Note</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -188,4 +236,13 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: '700' },
   dangerBtn: { height: 52, borderRadius: BorderRadius.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, borderWidth: 1, borderColor: Colors.danger, backgroundColor: Colors.white },
   dangerBtnText: { color: Colors.danger, fontSize: FontSize.md, fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: Spacing.lg, paddingBottom: Spacing.xxl },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.md },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.text },
+  noteInput: { borderWidth: 1, borderColor: Colors.border, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: FontSize.md, color: Colors.text, minHeight: 100, textAlignVertical: 'top', marginBottom: Spacing.md },
+  saveNoteBtn: { backgroundColor: Colors.primary, height: 48, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center' },
+  saveNoteTxt: { color: Colors.white, fontSize: FontSize.md, fontWeight: '700' },
+  msgBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: BorderRadius.full, borderWidth: 1, borderColor: Colors.primary },
+  msgBtnTxt: { color: Colors.primary, fontSize: FontSize.xs, fontWeight: '600' },
 });

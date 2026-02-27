@@ -12,6 +12,7 @@ interface OrderState {
   hydrate: () => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   updateStatus: (id: string, status: OrderStatus) => Promise<void>;
+  addNote: (id: string, note: string) => Promise<void>;
 }
 
 export const useOrderStore = create<OrderState>((set, get) => ({
@@ -39,6 +40,14 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   updateStatus: async (id, status) => {
     const orders = get().orders.map((o) =>
       o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o,
+    );
+    await setItem(STORAGE_KEY, orders);
+    set({ orders });
+  },
+
+  addNote: async (id, note) => {
+    const orders = get().orders.map((o) =>
+      o.id === id ? { ...o, note, updatedAt: new Date().toISOString() } : o,
     );
     await setItem(STORAGE_KEY, orders);
     set({ orders });

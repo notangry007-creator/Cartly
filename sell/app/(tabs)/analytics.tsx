@@ -1,13 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import StatCard from '@/src/components/common/StatCard';
 import { Colors, FontSize, Spacing, BorderRadius, Shadow } from '@/src/theme';
 import { formatNPR, percentageChange } from '@/src/utils/helpers';
 import { useOrderStore } from '@/src/stores/orderStore';
 import { useProductStore } from '@/src/stores/productStore';
 import { SEED_ANALYTICS } from '@/src/data/seed';
+import { exportOrdersCsv, exportAnalyticsCsv } from '@/src/utils/csvExport';
 
 const PERIODS = ['7 Days', '14 Days', '30 Days'] as const;
 type Period = (typeof PERIODS)[number];
@@ -70,10 +72,21 @@ export default function AnalyticsScreen() {
   const chartStats = hasRealData ? shownStats : SEED_ANALYTICS.dailyStats.slice(-days);
   const maxRevenue = Math.max(...chartStats.map((s) => s.revenue), 1);
 
+  async function handleExport() {
+    Alert.alert('Export Data', 'Choose export format:', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Orders CSV', onPress: () => exportOrdersCsv(orders).catch(() => Alert.alert('Error', 'Export failed')) },
+      { text: 'Analytics CSV', onPress: () => exportAnalyticsCsv(orders).catch(() => Alert.alert('Error', 'Export failed')) },
+    ]);
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Analytics</Text>
+        <TouchableOpacity onPress={handleExport} hitSlop={8} accessibilityLabel="Export data as CSV">
+          <Ionicons name="download-outline" size={22} color={Colors.white} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -159,7 +172,7 @@ export default function AnalyticsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md },
+  header: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerTitle: { color: Colors.white, fontSize: FontSize.xl, fontWeight: '700' },
   content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
   periodRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },

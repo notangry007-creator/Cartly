@@ -24,7 +24,12 @@ const METHODS = ['Bank Transfer', 'eSewa', 'Khalti'];
 export default function PayoutsScreen() {
   const router = useRouter();
   const orders = useOrderStore((s) => s.orders);
-  const { payouts, requestPayout } = usePayoutStore();
+  const { payouts, requestPayout, schedule, saveSchedule, disableSchedule } = usePayoutStore();
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [schedFreq, setSchedFreq] = useState<'weekly' | 'biweekly' | 'monthly'>('weekly');
+  const [schedMethod, setSchedMethod] = useState(METHODS[0]);
+  const [schedAccount, setSchedAccount] = useState('');
+  const [schedMinAmount, setSchedMinAmount] = useState('500');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [amount, setAmount] = useState('');
@@ -94,6 +99,24 @@ export default function PayoutsScreen() {
                 <Text style={styles.requestBtnText}>Request Payout</Text>
               </TouchableOpacity>
             </View>
+            {/* Auto-schedule card */}
+            <TouchableOpacity
+              style={[styles.scheduleCard, schedule?.enabled && styles.scheduleCardActive]}
+              onPress={() => setShowScheduleModal(true)}
+            >
+              <View style={styles.scheduleLeft}>
+                <Ionicons name="calendar-outline" size={20} color={schedule?.enabled ? Colors.white : Colors.primary} />
+                <View>
+                  <Text style={[styles.scheduleTitle, schedule?.enabled && { color: Colors.white }]}>
+                    {schedule?.enabled ? `Auto-Payout: ${schedule.frequency}` : 'Set Up Auto-Payout'}
+                  </Text>
+                  <Text style={[styles.scheduleSub, schedule?.enabled && { color: 'rgba(255,255,255,0.7)' }]}>
+                    {schedule?.enabled ? `Min ${formatNPR(schedule.minAmount)} · ${schedule.method}` : 'Automatically request payouts on a schedule'}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={schedule?.enabled ? 'rgba(255,255,255,0.7)' : Colors.grey500} />
+            </TouchableOpacity>
             <Text style={styles.sectionTitle}>Payout History</Text>
           </View>
         }
@@ -166,6 +189,62 @@ export default function PayoutsScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Auto-Schedule Modal */}
+      <Modal visible={showScheduleModal} transparent animationType="slide" onRequestClose={() => setShowScheduleModal(false)}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Auto-Payout Schedule</Text>
+              <TouchableOpacity onPress={() => setShowScheduleModal(false)} hitSlop={8}>
+                <Ionicons name="close" size={22} color={Colors.grey700} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.fieldLabel}>Frequency</Text>
+            <View style={styles.methodRow}>
+              {(['weekly', 'biweekly', 'monthly'] as const).map(f => (
+                <TouchableOpacity key={f} style={[styles.methodBtn, schedFreq === f && styles.methodBtnActive]} onPress={() => setSchedFreq(f)}>
+                  <Text style={[styles.methodText, schedFreq === f && styles.methodTextActive]}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.fieldLabel}>Method</Text>
+            <View style={styles.methodRow}>
+              {METHODS.map(m => (
+                <TouchableOpacity key={m} style={[styles.methodBtn, schedMethod === m && styles.methodBtnActive]} onPress={() => setSchedMethod(m)}>
+                  <Text style={[styles.methodText, schedMethod === m && styles.methodTextActive]}>{m}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.fieldLabel}>Account Details *</Text>
+            <TextInput style={styles.fieldInput} placeholder={schedMethod === 'Bank Transfer' ? 'Bank name & account number' : `${schedMethod} phone number`} placeholderTextColor={Colors.grey400} value={schedAccount} onChangeText={setSchedAccount} />
+            <Text style={styles.fieldLabel}>Minimum Amount (NPR)</Text>
+            <TextInput style={styles.fieldInput} placeholder="500" placeholderTextColor={Colors.grey400} keyboardType="decimal-pad" value={schedMinAmount} onChangeText={setSchedMinAmount} />
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+              {schedule?.enabled && (
+                <TouchableOpacity style={[styles.submitBtn, { flex: 1, backgroundColor: Colors.danger }]} onPress={() => { disableSchedule(); setShowScheduleModal(false); }}>
+                  <Text style={styles.submitText}>Disable</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.submitBtn, { flex: 1 }]}
+                onPress={() => {
+                  if (!schedAccount.trim()) { Alert.alert('Missing', 'Enter account details.'); return; }
+                  const nextDate = new Date();
+                  if (schedFreq === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+                  else if (schedFreq === 'biweekly') nextDate.setDate(nextDate.getDate() + 14);
+                  else nextDate.setMonth(nextDate.getMonth() + 1);
+                  saveSchedule({ enabled: true, frequency: schedFreq, method: schedMethod, accountDetails: schedAccount.trim(), minAmount: parseFloat(schedMinAmount) || 500, nextPayoutDate: nextDate.toISOString() });
+                  setShowScheduleModal(false);
+                  Alert.alert('Saved!', `Auto-payout set to ${schedFreq}. Next payout: ${nextDate.toLocaleDateString()}`);
+                }}
+              >
+                <Text style={styles.submitText}>Save Schedule</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -189,6 +268,11 @@ const styles = StyleSheet.create({
   balanceAmount: { color: Colors.white, fontSize: FontSize.xxxl, fontWeight: '800', marginBottom: Spacing.md },
   requestBtn: { backgroundColor: Colors.white, paddingHorizontal: Spacing.lg, paddingVertical: 10, borderRadius: BorderRadius.full },
   requestBtnText: { color: Colors.primary, fontSize: FontSize.md, fontWeight: '700' },
+  scheduleCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: Spacing.md, ...Shadow.sm, borderWidth: 1.5, borderColor: Colors.border },
+  scheduleCardActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  scheduleLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  scheduleTitle: { fontSize: FontSize.sm, fontWeight: '700', color: Colors.text },
+  scheduleSub: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
   sectionTitle: { fontSize: FontSize.md, fontWeight: '700', color: Colors.text, marginBottom: Spacing.sm },
   emptyText: { textAlign: 'center', color: Colors.textSecondary, fontSize: FontSize.md, padding: Spacing.xl },
   card: { backgroundColor: Colors.white, borderRadius: BorderRadius.md, padding: Spacing.md, ...Shadow.sm },

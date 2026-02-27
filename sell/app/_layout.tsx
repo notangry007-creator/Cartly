@@ -10,6 +10,7 @@ import { useOrderStore } from '@/src/stores/orderStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { usePayoutStore } from '@/src/stores/payoutStore';
 import { useCouponStore } from '@/src/stores/couponStore';
+import { useChatStore } from '@/src/stores/chatStore';
 import { requestNotificationPermission } from '@/src/utils/pushNotifications';
 import { Colors } from '@/src/theme';
 
@@ -25,6 +26,7 @@ export default function RootLayout() {
   const hydrateNotifications = useNotificationStore((s) => s.hydrate);
   const hydratePayouts = usePayoutStore((s) => s.hydrate);
   const hydrateCoupons = useCouponStore((s) => s.hydrate);
+  const hydrateChat = useChatStore((s) => s.hydrate);
 
   useEffect(() => {
     async function init() {
@@ -36,6 +38,7 @@ export default function RootLayout() {
           hydrateNotifications(),
           hydratePayouts(),
           hydrateCoupons(),
+          hydrateChat(),
         ]);
       } finally {
         setReady(true);
@@ -70,6 +73,8 @@ export default function RootLayout() {
           <Stack.Screen name="returns" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="bulk-stock" options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="coupons" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="verification" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="chat" options={{ animation: 'slide_from_right' }} />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

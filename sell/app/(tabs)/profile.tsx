@@ -34,7 +34,7 @@ export default function ProfileScreen() {
     { icon: 'wallet-outline', label: 'Payouts', route: '/payouts' },
     { icon: 'pricetag-outline', label: 'Coupons', route: '/coupons' },
     { icon: 'return-down-back-outline', label: 'Returns & Refunds', route: '/returns' },
-    { icon: 'shield-checkmark-outline', label: 'Account Verification', onPress: () => Alert.alert('Verification', 'Please contact support@cartly.app to complete seller verification.') },
+    { icon: 'shield-checkmark-outline', label: 'Account Verification', route: '/verification' },
     { icon: 'help-circle-outline', label: 'Help & Support', route: '/support' },
     { icon: 'document-text-outline', label: 'Terms & Privacy', route: '/privacy' },
   ];
