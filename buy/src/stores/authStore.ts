@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { User } from '../types';
+import { User, Address } from '../types';
 import { clearAuthToken, getItem, removeItem, saveAuthToken, saveUserId, setItem, STORAGE_KEYS } from '../utils/storage';
 import { v4 as uuid } from 'uuid';
+import { DEMO_ADDRESSES } from '../data/seed';
 interface AuthState {
   user: User|null; isLoading: boolean; isAuthenticated: boolean;
   login: (phone:string, name:string, email?:string) => Promise<void>;
@@ -27,6 +28,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user = { id: uuid(), phone, name, email, walletBalance: 500, createdAt: new Date().toISOString() };
         users.push(user);
         await setItem(STORAGE_KEYS.USERS, users);
+        // Seed default addresses for new user
+        const addrKey = `${STORAGE_KEYS.ADDRESSES}_${user.id}`;
+        const existingAddrs = await getItem<Address[]>(addrKey);
+        if (!existingAddrs || existingAddrs.length === 0) {
+          const seeded: Address[] = DEMO_ADDRESSES.map((a, i) => ({ ...a, id: uuid(), userId: user!.id, isDefault: i === 0 }));
+          await setItem(addrKey, seeded);
+        }
       } else if (name) {
         user = { ...user, name, email: email ?? user.email };
         users = users.map(u => u.id === user!.id ? user! : u);

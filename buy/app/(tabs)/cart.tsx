@@ -90,6 +90,8 @@ export default function CartScreen() {
     if(c.validZones&&!c.validZones.includes(zoneId)){setCouponError('Coupon not valid in your zone');return;}
     if(c.validCategoryIds){const ok=resolved.some(({product})=>product&&c.validCategoryIds!.includes(product.categoryId));if(!ok){setCouponError('Coupon not applicable for cart items');return;}}
     setAppliedCoupon(c);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showSuccess(`Coupon "${c.code}" applied! You save ${c.type==='flat'?'NPR '+c.value:c.value+'%'}`);
   }
 
   return (

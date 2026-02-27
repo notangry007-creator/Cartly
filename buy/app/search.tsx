@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProducts } from '../src/hooks/useProducts';
 import { useZoneStore } from '../src/stores/zoneStore';
 import { getItem, setItem, STORAGE_KEYS } from '../src/utils/storage';
+import { PRODUCTS } from '../src/data/seed';
 import ProductCard from '../src/components/common/ProductCard';
 import { ProductGridSkeleton } from '../src/components/common/SkeletonLoader';
 import { theme, SPACING, RADIUS } from '../src/theme';
@@ -31,6 +32,15 @@ export default function SearchScreen() {
   const [sortBy, setSortBy] = useState<Sort>((params.sort as Sort)??'relevance');
   useEffect(()=>{ const t=setTimeout(()=>setDebQ(query),400); return ()=>clearTimeout(t); },[query]);
   useEffect(()=>{ getItem<string[]>(STORAGE_KEYS.RECENT_SEARCHES).then(r=>setRecent(r??[])); },[]);
+
+  // Live suggestions: product titles matching query (before debounce)
+  const liveSuggestions = query.trim().length >= 2
+    ? [...new Set(
+        PRODUCTS
+          .filter(p => p.title.toLowerCase().includes(query.toLowerCase()) || p.brand?.toLowerCase().includes(query.toLowerCase()))
+          .map(p => p.title)
+      )].slice(0, 5)
+    : [];
   const { data: products=[], isLoading } = useProducts({ search:debQ||undefined, zoneId, isFastDelivery:fast||undefined, isAuthenticated:verified||undefined, inStock:inStock||undefined, minRating, codAvailable:codOnly||undefined, sortBy, minPrice, maxPrice });
   async function doSearch(q: string) {
     setQuery(q); setDebQ(q);
@@ -44,7 +54,7 @@ export default function SearchScreen() {
     }
   }
   const SORTS: {v:Sort;l:string}[] = [{v:'relevance',l:'Relevance'},{v:'price_asc',l:'Price Low-High'},{v:'price_desc',l:'Price High-Low'},{v:'rating',l:'Top Rated'},{v:'fastest',l:'Fastest'}];
-  const showSug = !debQ;
+  const showSug = !debQ || (query.trim().length >= 2 && liveSuggestions.length > 0 && isLoading);
   return (
     <View style={[s.container,{paddingTop:insets.top}]}>
       <View style={s.searchHeader}>
@@ -70,8 +80,15 @@ export default function SearchScreen() {
       {showSug?(
         <ScrollView style={s.suggestions}>
           {recent.length>0&&<><View style={s.sugHeader}><Text variant="labelMedium" style={s.sugTitle}>Recent</Text><TouchableOpacity onPress={async()=>{setRecent([]);await setItem(STORAGE_KEYS.RECENT_SEARCHES,[]);}}><Text variant="labelSmall" style={{color:theme.colors.primary}}>Clear</Text></TouchableOpacity></View>{recent.map(r=><TouchableOpacity key={r} style={s.sugItem} onPress={()=>doSearch(r)}><Ionicons name="time-outline" size={16} color="#999"/><Text variant="bodyMedium" style={s.sugTxt}>{r}</Text></TouchableOpacity>)}</>}
-          <View style={s.sugHeader}><Text variant="labelMedium" style={s.sugTitle}>Popular</Text></View>
-          {['Samsung phone','Sony headphones','Organic honey','iPhone 15','Yoga mat'].map(p=><TouchableOpacity key={p} style={s.sugItem} onPress={()=>doSearch(p)}><Ionicons name="trending-up" size={16} color={theme.colors.primary}/><Text variant="bodyMedium" style={s.sugTxt}>{p}</Text></TouchableOpacity>)}
+          {/* Live suggestions while typing */}
+          {liveSuggestions.length > 0 && (
+            <>
+              <View style={s.sugHeader}><Text variant="labelMedium" style={s.sugTitle}>Suggestions</Text></View>
+              {liveSuggestions.map(s2=><TouchableOpacity key={s2} style={s.sugItem} onPress={()=>doSearch(s2)}><Ionicons name="search" size={16} color={theme.colors.primary}/><Text variant="bodyMedium" style={s.sugTxt}>{s2}</Text></TouchableOpacity>)}
+            </>
+          )}
+          {!query.trim() && <><View style={s.sugHeader}><Text variant="labelMedium" style={s.sugTitle}>Popular</Text></View>
+          {['Samsung phone','Sony headphones','Organic honey','iPhone 15','Yoga mat','Pashmina shawl','Trekking poles'].map(p=><TouchableOpacity key={p} style={s.sugItem} onPress={()=>doSearch(p)}><Ionicons name="trending-up" size={16} color={theme.colors.primary}/><Text variant="bodyMedium" style={s.sugTxt}>{p}</Text></TouchableOpacity>)}</> }
         </ScrollView>
       ):isLoading?(
         <ProductGridSkeleton count={6}/>

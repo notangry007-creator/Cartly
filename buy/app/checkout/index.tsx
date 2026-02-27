@@ -142,8 +142,8 @@ export default function CheckoutScreen() {
         <View style={{height:100}}/>
       </ScrollView>
       <View style={[s.bottomBar,{paddingBottom:insets.bottom+SPACING.sm}]}>
-        {step>0&&<Button mode="outlined" onPress={()=>setStep(step-1)}>Back</Button>}
-        {step<STEPS.length-1?<Button mode="contained" onPress={()=>setStep(step+1)} disabled={!canProceed()} style={s.nextBtn} contentStyle={{paddingVertical:4}}>Continue</Button>:<Button mode="contained" onPress={placeOrder} loading={creating} disabled={creating||!canProceed()} style={s.nextBtn} contentStyle={{paddingVertical:4}}>Place Order · {formatNPR(total)}</Button>}
+        {step>0&&<Button mode="outlined" onPress={()=>{setStep(step-1);Haptics.selectionAsync();}}>Back</Button>}
+        {step<STEPS.length-1?<Button mode="contained" onPress={()=>{setStep(step+1);Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);}} disabled={!canProceed()} style={s.nextBtn} contentStyle={{paddingVertical:4}}>Continue</Button>:<Button mode="contained" onPress={placeOrder} loading={creating} disabled={creating||!canProceed()} style={s.nextBtn} contentStyle={{paddingVertical:4}}>Place Order · {formatNPR(total)}</Button>}
       </View>
     </View>
   );

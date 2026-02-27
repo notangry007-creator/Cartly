@@ -10,8 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withSequence, withSpring,
+  useSharedValue, useAnimatedStyle, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
+import { PinchGestureHandler, PinchGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { useProduct, useSeller, useReviews } from '../../src/hooks/useProducts';
 import { useCartStore } from '../../src/stores/cartStore';
@@ -28,6 +29,43 @@ import { theme, SPACING, RADIUS } from '../../src/theme';
 import { IMG } from '../../src/data/images';
 
 const { width: W } = Dimensions.get('window');
+
+// ─── Pinch-to-zoom gallery image ──────────────────────────────────────────────
+function ZoomableGalleryImage({ uri, blurhash }: { uri: string; blurhash?: string }) {
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const onPinch = (event: PinchGestureHandlerGestureEvent) => {
+    scale.value = Math.max(1, Math.min(savedScale.value * event.nativeEvent.scale, 4));
+  };
+
+  const onPinchEnd = () => {
+    if (scale.value < 1.05) {
+      scale.value = withSpring(1, { damping: 14 });
+      savedScale.value = 1;
+    } else {
+      savedScale.value = scale.value;
+    }
+  };
+
+  return (
+    <PinchGestureHandler onGestureEvent={onPinch} onEnded={onPinchEnd}>
+      <Animated.View style={[{ width: W, justifyContent: 'center', alignItems: 'center' }, animStyle]}>
+        <Image
+          source={{ uri }}
+          style={{ width: W, height: W * 1.25 }}
+          contentFit="contain"
+          placeholder={blurhash ? { blurhash } : undefined}
+          transition={200}
+        />
+      </Animated.View>
+    </PinchGestureHandler>
+  );
+}
 
 function TrustItem({ icon, text, ok }: { icon: string; text: string; ok: boolean }) {
   return (
@@ -170,11 +208,11 @@ export default function ProductDetailScreen() {
           </Animated.View>
           <TouchableOpacity
             onPress={() => {
-              const deepLink = `buy://product/${product.id}`;
-              const webFallback = `https://buy.app/product/${product.id}`;
+              const deepLink = `buy://product/${p.id}`;
+              const webFallback = `https://buy.app/product/${p.id}`;
               Share.share({
-                title: product.title,
-                message: `Check out "${product.title}" on Buy!\nPrice: ${formatNPR(variant?.price ?? 0)}${(getDiscountPercent(variant?.price ?? 0, variant?.mrp ?? 0)) > 0 ? ` (${getDiscountPercent(variant?.price ?? 0, variant?.mrp ?? 0)}% off)` : ''}\n\nOpen in Buy app: ${deepLink}\nOr visit: ${webFallback}`,
+                title: p.title,
+                message: `Check out "${p.title}" on Buy!\nPrice: ${formatNPR(variant?.price ?? 0)}${(getDiscountPercent(variant?.price ?? 0, variant?.mrp ?? 0)) > 0 ? ` (${getDiscountPercent(variant?.price ?? 0, variant?.mrp ?? 0)}% off)` : ''}\n\nOpen in Buy app: ${deepLink}\nOr visit: ${webFallback}`,
                 url: webFallback,
               });
             }}
@@ -458,34 +496,28 @@ export default function ProductDetailScreen() {
         </Button>
       </View>
 
-      {/* Full-screen image gallery */}
+      {/* Full-screen pinch-to-zoom image gallery */}
       <Modal visible={galleryVisible} animationType="fade" statusBarTranslucent>
         <View style={s.galleryBg}>
           <TouchableOpacity style={s.galleryClose} onPress={() => setGalleryVisible(false)}>
             <Ionicons name="close" size={28} color="#fff" />
           </TouchableOpacity>
           <FlatList
-            data={product.images}
+            data={p.images}
             keyExtractor={(_, i) => String(i)}
             horizontal pagingEnabled
             initialScrollIndex={galleryStart}
             getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
             showsHorizontalScrollIndicator={false}
             renderItem={({ item, index }) => {
-              const galleryImgs = (IMG.products as unknown as Record<string, {uri:string;blurhash:string}[]>)[product.id];
+              const galleryImgs = (IMG.products as unknown as Record<string, {uri:string;blurhash:string}[]>)[p.id];
               const imgData = galleryImgs?.[index];
-              return (
-                <View style={{ width: W, justifyContent: 'center' }}>
-                  <Image
-                    source={{ uri: imgData?.uri ?? item }}
-                    style={{ width: W, height: W * 1.2 }}
-                    contentFit="contain"
-                    placeholder={{ blurhash: imgData?.blurhash }}
-                  />
-                </View>
-              );
+              return <ZoomableGalleryImage uri={imgData?.uri ?? item} blurhash={imgData?.blurhash} />;
             }}
           />
+          <View style={s.galleryCounter}>
+            <Text style={s.galleryCounterTxt}>{galleryStart + 1} / {p.images.length}</Text>
+          </View>
         </View>
       </Modal>
     </View>
@@ -573,4 +605,6 @@ const s = StyleSheet.create({
   buyBtn: { flex: 1 },
   galleryBg: { flex: 1, backgroundColor: '#000', justifyContent: 'center' },
   galleryClose: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: SPACING.sm },
+  galleryCounter: { position: 'absolute', bottom: 40, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
+  galleryCounterTxt: { color: '#fff', fontSize: 13, fontWeight: '600' },
 });

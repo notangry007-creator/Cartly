@@ -10,11 +10,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { useZoneStore } from '../../src/stores/zoneStore';
 import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
+import { useWishlistStore } from '../../src/stores/wishlistStore';
 import { useProducts, useCategories } from '../../src/hooks/useProducts';
+import { PRODUCTS } from '../../src/data/seed';
 import { ZONES } from '../../src/data/zones';
 import { BANNERS } from '../../src/data/seed';
 import { IMG } from '../../src/data/images';
 import { requestNotificationPermission } from '../../src/utils/pushNotifications';
+import * as Haptics from 'expo-haptics';
 import ProductCard from '../../src/components/common/ProductCard';
 import CachedImage from '../../src/components/common/CachedImage';
 import { BannerSkeleton, ProductRowSkeleton } from '../../src/components/common/SkeletonLoader';
@@ -90,6 +93,8 @@ export default function HomeScreen() {
   const { data: verifiedProducts, isLoading: loadingVerified } = useProducts({ zoneId, isAuthenticated: true, inStock: true });
   const { data: dealProducts, isLoading: loadingDeals } = useProducts({ sortBy: 'price_asc', inStock: true });
   const { products: recentProducts } = useRecentlyViewedStore();
+  const { productIds: wishlistIds } = useWishlistStore();
+  const wishlistProducts = PRODUCTS.filter(p => wishlistIds.includes(p.id));
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -105,19 +110,19 @@ export default function HomeScreen() {
 
   // Build page sections as FlatList data
   type Section =
-    | { type: 'topbar' }
-    | { type: 'search' }
     | { type: 'banners' }
     | { type: 'categories' }
     | { type: 'fast' }
     | { type: 'verified' }
     | { type: 'deals' }
-    | { type: 'recent' };
+    | { type: 'recent' }
+    | { type: 'wishlist' };
 
   const sections: Section[] = [
     { type: 'banners' },
     { type: 'categories' },
     ...(recentProducts.length > 0 ? [{ type: 'recent' as const }] : []),
+    ...(wishlistProducts.length > 0 ? [{ type: 'wishlist' as const }] : []),
     ...(zoneId === 'ktm_core' || zoneId === 'ktm_outer' ? [{ type: 'fast' as const }] : []),
     { type: 'verified' },
     { type: 'deals' },
@@ -196,6 +201,14 @@ export default function HomeScreen() {
           <>
             <SectionHeader title="🕐 Recently Viewed" />
             <HorizontalProducts data={recentProducts.slice(0, 8)} zoneId={zoneId} isLoading={false} />
+          </>
+        );
+
+      case 'wishlist':
+        return (
+          <>
+            <SectionHeader title="❤️ Your Wishlist" onSeeAll={() => router.push('/wishlist')} />
+            <HorizontalProducts data={wishlistProducts.slice(0, 8)} zoneId={zoneId} isLoading={false} />
           </>
         );
 
@@ -289,7 +302,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={zone.id}
                 style={[s.zoneOpt, zoneId === zone.id && s.zoneOptA]}
-                onPress={async () => { await setZone(zone.id as ZoneId); setShowZonePicker(false); }}
+                onPress={async () => { await setZone(zone.id as ZoneId); setShowZonePicker(false); Haptics.selectionAsync(); }}
                 accessibilityRole="radio"
                 accessibilityLabel={`${zone.name}, ${zone.codAvailable ? 'COD available' : 'Prepaid only'}`}
                 accessibilityState={{ checked: zoneId === zone.id }}
