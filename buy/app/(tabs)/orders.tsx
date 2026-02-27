@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { SkeletonBox } from '../../src/components/common/SkeletonLoader';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useOrders } from '../../src/hooks/useOrders';
 import { Order, OrderStatus } from '../../src/types';
@@ -18,6 +19,7 @@ export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<Filter>('all');
+  const isFirstLoad = isLoading && orders.length === 0;
   const { data: orders=[], isLoading, refetch } = useOrders(user?.id??'');
   if (!user) return (
     <View style={[s.container,{paddingTop:insets.top}]}>

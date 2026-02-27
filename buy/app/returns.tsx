@@ -8,6 +8,7 @@ import { useReturns } from '../src/hooks/useOrders';
 import { formatDate } from '../src/utils/helpers';
 import { useAuthGuard } from '../src/hooks/useAuthGuard';
 import ScreenHeader from '../src/components/common/ScreenHeader';
+import { useRouter } from 'expo-router';
 import { theme, SPACING, RADIUS } from '../src/theme';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -15,6 +16,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ReturnsScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { data: returns = [], isLoading, refetch } = useReturns(user?.id ?? '');
@@ -43,6 +45,7 @@ export default function ReturnsScreen() {
             </View>
           }
           renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => router.push('/return/' + item.id)} activeOpacity={0.8}>
             <Surface style={s.card} elevation={1}>
               <View style={s.cardHeader}>
                 <Text variant="labelMedium" style={s.orderId}>
@@ -62,6 +65,7 @@ export default function ReturnsScreen() {
               <Text variant="bodySmall" style={s.desc} numberOfLines={2}>{item.description}</Text>
               <Text variant="labelSmall" style={s.date}>Submitted: {formatDate(item.createdAt)}</Text>
             </Surface>
+            </TouchableOpacity>
           )}
         />
       )}

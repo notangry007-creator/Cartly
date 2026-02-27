@@ -17,7 +17,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { control, handleSubmit, formState:{errors,isSubmitting} } = useForm<F>({ resolver: zodResolver(schema) });
   const onSubmit = async (data: F) => {
-    const phone = data.phone.replace(/[s-+]/g,'');
+    const phone = data.phone.replace(/[\s\-+]/g, '');
     const otp = generateOTP(phone);
     router.push({ pathname:'/(auth)/otp', params:{ phone, otp } });
   };

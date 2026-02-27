@@ -14,6 +14,7 @@ import { useZoneStore } from '../src/stores/zoneStore';
 import { useCartStore } from '../src/stores/cartStore';
 import { useNotificationStore } from '../src/stores/notificationStore';
 import { useWishlistStore } from '../src/stores/wishlistStore';
+import { useRecentlyViewedStore } from '../src/stores/recentlyViewedStore';
 import { useNetworkStore } from '../src/stores/networkStore';
 import { getAuthToken, getSavedUserId } from '../src/utils/storage';
 import OfflineBanner from '../src/components/common/OfflineBanner';
@@ -40,6 +41,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const { loadCart } = useCartStore();
   const { loadNotifications } = useNotificationStore();
   const { loadWishlist } = useWishlistStore();
+  const { loadProducts: loadRecentlyViewed } = useRecentlyViewedStore();
   const { loadTheme, currentTheme } = useThemeStore();
   const { init: initNetwork } = useNetworkStore();
 
@@ -124,6 +126,11 @@ export default function RootLayout() {
                     <Stack.Screen name="returns" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="support" options={{ animation: 'slide_from_right' }} />
                     <Stack.Screen name="wishlist" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="offers" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="seller/[id]" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="return/[id]" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="wallet/index" options={{ animation: 'slide_from_right' }} />
+                    <Stack.Screen name="wallet/topup" options={{ animation: 'slide_from_right' }} />
                   </Stack>
                 </AppInitializer>
               </ToastProvider>

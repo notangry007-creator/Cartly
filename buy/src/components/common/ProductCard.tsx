@@ -18,7 +18,7 @@ interface Props {
   onPress: () => void;
 }
 
-export default function ProductCard({ product, zoneId, onPress }: Props) {
+function ProductCard({ product, zoneId, onPress }: Props) {
   const discount = getDiscountPercent(product.basePrice, product.baseMrp);
   const eta = getBestETA(product, zoneId);
   const cod = product.codAvailableZones.includes(zoneId);
@@ -125,3 +125,5 @@ const s = StyleSheet.create({
   codTxt: { color: '#2E7D32', fontSize: 9, fontWeight: '700' },
   eta: { color: '#888', fontSize: 10 },
 });
+
+export default React.memo(ProductCard);

@@ -13,6 +13,7 @@ import { useCreateReturn } from '../../../src/hooks/useOrders';
 import { useNotificationStore } from '../../../src/stores/notificationStore';
 import { ReturnReason } from '../../../src/types';
 import ScreenHeader from '../../../src/components/common/ScreenHeader';
+import { useToast } from '../../../src/context/ToastContext';
 import { theme, SPACING, RADIUS } from '../../../src/theme';
 const schema = z.object({ reason: z.enum(['wrong_item','damaged','not_as_described','changed_mind','other']), description: z.string().min(10,'Please provide at least 10 characters') });
 type F = z.infer<typeof schema>;
@@ -29,6 +30,7 @@ export default function ReturnScreen() {
   const { id: orderId } = useLocalSearchParams<{id:string}>();
   const { user } = useAuthStore();
   const { mutateAsync: createReturn, isPending } = useCreateReturn();
+  const { showError } = useToast();
   const { addNotification } = useNotificationStore();
   const [photos, setPhotos] = useState<string[]>([]);
   const { control, handleSubmit, formState:{errors}, setValue, watch } = useForm<F>({ resolver:zodResolver(schema), defaultValues:{reason:'damaged',description:''} });
@@ -38,8 +40,13 @@ export default function ReturnScreen() {
     if(!r.canceled) setPhotos(p=>[...p,...r.assets.map(a=>a.uri)].slice(0,4));
   }
   async function takePhoto() {
-    const r = await ImagePicker.launchCameraAsync({ quality:0.7 });
-    if(!r.canceled) setPhotos(p=>[...p,r.assets[0].uri].slice(0,4));
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      showError('Camera permission is required to take photos');
+      return;
+    }
+    const r = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!r.canceled) setPhotos(p => [...p, r.assets[0].uri].slice(0, 4));
   }
   const onSubmit = async (data: F) => {
     if(!user) return;

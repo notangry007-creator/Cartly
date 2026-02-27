@@ -25,10 +25,13 @@ export default function SearchScreen() {
   const [verified, setVerified] = useState(params.verified==='1');
   const [inStock, setInStock] = useState(true);
   const [minRating, setMinRating] = useState<number|undefined>();
+  const [minPrice, setMinPrice] = useState<number|undefined>();
+  const [maxPrice, setMaxPrice] = useState<number|undefined>();
+  const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [sortBy, setSortBy] = useState<Sort>((params.sort as Sort)??'relevance');
   useEffect(()=>{ const t=setTimeout(()=>setDebQ(query),400); return ()=>clearTimeout(t); },[query]);
   useEffect(()=>{ getItem<string[]>(STORAGE_KEYS.RECENT_SEARCHES).then(r=>setRecent(r??[])); },[]);
-  const { data: products=[], isLoading } = useProducts({ search:debQ||undefined, zoneId, isFastDelivery:fast||undefined, isAuthenticated:verified||undefined, inStock:inStock||undefined, minRating, codAvailable:codOnly||undefined, sortBy });
+  const { data: products=[], isLoading } = useProducts({ search:debQ||undefined, zoneId, isFastDelivery:fast||undefined, isAuthenticated:verified||undefined, inStock:inStock||undefined, minRating, codAvailable:codOnly||undefined, sortBy, minPrice, maxPrice });
   async function doSearch(q: string) {
     setQuery(q); setDebQ(q);
     if(q.trim()){const u=[q,...recent.filter(r=>r!==q)].slice(0,8);setRecent(u);await setItem(STORAGE_KEYS.RECENT_SEARCHES,u);}
@@ -50,6 +53,7 @@ export default function SearchScreen() {
             <Chip selected={verified} onPress={()=>setVerified(!verified)} style={[s.fc,verified&&s.fcA]} compact icon="shield-checkmark">Verified</Chip>
             <Chip selected={inStock} onPress={()=>setInStock(!inStock)} style={[s.fc,inStock&&s.fcA]} compact>In Stock</Chip>
             {[4,3].map(r=><Chip key={r} selected={minRating===r} onPress={()=>setMinRating(minRating===r?undefined:r)} style={[s.fc,minRating===r&&s.fcA]} compact>{r}★+</Chip>)}
+            <Chip selected={!!minPrice||!!maxPrice} onPress={()=>setShowPriceFilter(true)} style={[s.fc,(!!minPrice||!!maxPrice)&&s.fcA]} compact icon="pricetag">Price Range</Chip>
           </ScrollView>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.fScroll}>
             {SORTS.map(opt=><Chip key={opt.v} selected={sortBy===opt.v} onPress={()=>setSortBy(opt.v)} style={[s.fc,sortBy===opt.v&&s.fcA]} compact>{opt.l}</Chip>)}
@@ -71,6 +75,21 @@ export default function SearchScreen() {
           <View style={s.resHeader}><Text variant="labelMedium" style={{color:'#888'}}>{products.length} results</Text></View>
           <FlatList data={products} keyExtractor={i=>i.id} numColumns={2} contentContainerStyle={s.grid} columnWrapperStyle={s.row} renderItem={({item})=><ProductCard product={item} zoneId={zoneId} onPress={()=>router.push('/product/'+item.id)}/>}/>
         </>
+      )}
+      {/* Price filter modal */}
+      {showPriceFilter && (
+        <View style={s.priceModal}>
+          <View style={s.priceModalCard}>
+            <Text variant="titleMedium" style={{fontWeight:'700',color:'#222',marginBottom:SPACING.md}}>Price Range</Text>
+            {[{label:'Under NPR 1,000',min:undefined,max:1000},{label:'NPR 1,000–5,000',min:1000,max:5000},{label:'NPR 5,000–20,000',min:5000,max:20000},{label:'Above NPR 20,000',min:20000,max:undefined}].map(opt=>(
+              <TouchableOpacity key={opt.label} style={[s.priceOpt, minPrice===opt.min&&maxPrice===opt.max&&s.priceOptSel]} onPress={()=>{setMinPrice(opt.min);setMaxPrice(opt.max);setShowPriceFilter(false);}}>
+                <Text style={{color:minPrice===opt.min&&maxPrice===opt.max?theme.colors.primary:'#333',fontWeight:minPrice===opt.min&&maxPrice===opt.max?'700':'400'}}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={()=>{setMinPrice(undefined);setMaxPrice(undefined);setShowPriceFilter(false);}} style={{marginTop:SPACING.sm}}><Text style={{color:theme.colors.primary,textAlign:'center',fontWeight:'600'}}>Clear</Text></TouchableOpacity>
+            <TouchableOpacity onPress={()=>setShowPriceFilter(false)} style={{marginTop:SPACING.sm}}><Text style={{color:'#888',textAlign:'center'}}>Cancel</Text></TouchableOpacity>
+          </View>
+        </View>
       )}
     </View>
   );
@@ -96,4 +115,8 @@ const s = StyleSheet.create({
   resHeader:{paddingHorizontal:SPACING.lg,paddingVertical:SPACING.sm,backgroundColor:'#fff'},
   grid:{padding:SPACING.sm},
   row:{gap:0},
+  priceModal:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'center',alignItems:'center',zIndex:100},
+  priceModalCard:{backgroundColor:'#fff',borderRadius:RADIUS.lg,padding:SPACING.xl,width:'85%',gap:SPACING.sm},
+  priceOpt:{padding:SPACING.md,borderRadius:RADIUS.md,borderWidth:1.5,borderColor:'#e0e0e0'},
+  priceOptSel:{borderColor:theme.colors.primary,backgroundColor:theme.colors.primaryContainer},
 });

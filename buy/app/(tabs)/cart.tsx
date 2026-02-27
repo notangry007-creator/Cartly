@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated from 'react-native-reanimated';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useCartStore } from '../../src/stores/cartStore';
 import { useZoneStore } from '../../src/stores/zoneStore';
@@ -73,8 +75,18 @@ export default function CartScreen() {
         {resolved.map(({item,product,variant})=>{
           if(!product||!variant) return null;
           const disc = getDiscountPercent(variant.price,variant.mrp);
-          return (
-            <Surface key={item.productId+item.variantId} style={s.cartItem} elevation={1}>
+          const renderRightActions = () => (
+              <TouchableOpacity
+                style={s.swipeDelete}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeItem(user.id, item.productId, item.variantId); }}
+              >
+                <Ionicons name="trash" size={22} color="#fff" />
+                <Text style={s.swipeDeleteTxt}>Delete</Text>
+              </TouchableOpacity>
+            );
+            return (
+            <Swipeable key={item.productId+item.variantId} renderRightActions={renderRightActions} overshootRight={false}>
+            <Surface style={s.cartItem} elevation={1}>
               <Image source={{uri:product.images[0]}} style={s.itemImg} contentFit="cover"/>
               <View style={s.itemInfo}>
                 <Text variant="labelMedium" numberOfLines={2} style={s.itemTitle}>{product.title}</Text>
@@ -89,10 +101,11 @@ export default function CartScreen() {
                   <TouchableOpacity style={s.qBtn} onPress={()=>{if(item.quantity<variant.stock)updateQuantity(user.id,item.productId,item.variantId,item.quantity+1);}} disabled={item.quantity>=variant.stock}><Ionicons name="add" size={16} color={item.quantity>=variant.stock?'#ccc':'#333'}/></TouchableOpacity>
                 </View>
               </View>
-              <TouchableOpacity style={s.removeBtn} onPress={()=>Alert.alert('Remove','Remove this item?',[{text:'Cancel'},{text:'Remove',onPress:()=>removeItem(user.id,item.productId,item.variantId),style:'destructive'}])}>
+              <TouchableOpacity style={s.removeBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); removeItem(user.id, item.productId, item.variantId); }}>
                 <Ionicons name="trash-outline" size={18} color="#999"/>
               </TouchableOpacity>
             </Surface>
+            </Swipeable>
           );
         })}
         <Surface style={s.section} elevation={1}>
@@ -153,6 +166,8 @@ const s = StyleSheet.create({
   qBtn:{width:28,height:28,borderRadius:RADIUS.sm,backgroundColor:'#f0f0f0',justifyContent:'center',alignItems:'center'},
   qty:{fontWeight:'700',minWidth:24,textAlign:'center'},
   removeBtn:{padding:4,justifyContent:'flex-start'},
+  swipeDelete:{backgroundColor:'#B71C1C',justifyContent:'center',alignItems:'center',paddingHorizontal:SPACING.xl,borderRadius:RADIUS.md,marginLeft:SPACING.xs,marginBottom:SPACING.sm,gap:4},
+  swipeDeleteTxt:{color:'#fff',fontSize:11,fontWeight:'700'},
   section:{backgroundColor:'#fff',borderRadius:RADIUS.md,padding:SPACING.md,marginBottom:SPACING.sm},
   secTitle:{fontWeight:'700',color:'#222',marginBottom:SPACING.sm},
   couponRow:{flexDirection:'row',gap:SPACING.sm,alignItems:'center'},

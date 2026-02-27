@@ -1,15 +1,52 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Linking, ScrollView } from 'react-native';
 import { Text, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenHeader from '../src/components/common/ScreenHeader';
 import { theme, SPACING, RADIUS } from '../src/theme';
+
+const FAQ_ITEMS = [
+  { q: 'How do I track my order?', a: 'Go to Orders tab and tap on your order to see the real-time tracking timeline.' },
+  { q: 'Can I change my address after ordering?', a: 'Address changes are allowed only while the order is in Pending or Confirmed status.' },
+  { q: 'How long does delivery take?', a: 'Same day in Kathmandu Core, next day in Kathmandu Outer, 3–5 days in major cities, 5–8 days elsewhere.' },
+  { q: 'How do returns work?', a: 'Request a return within 7 days of delivery from the Order Details page. We\'ll pick up and process your refund within 5-7 business days.' },
+  { q: 'Is COD available everywhere?', a: 'COD is available in Kathmandu Core, Outer, and major cities. Rest of Nepal requires prepaid orders.' },
+  { q: 'How do I use wallet balance?', a: 'Select "Buy Wallet" as payment method at checkout. Your wallet balance will be deducted.' },
+];
+
+function FaqAccordion() {
+  const [open, setOpen] = React.useState<number | null>(null);
+  return (
+    <Surface style={faqS.card} elevation={1}>
+      <Text variant="titleSmall" style={faqS.title}>Frequently Asked Questions</Text>
+      {FAQ_ITEMS.map((item, i) => (
+        <TouchableOpacity key={i} onPress={() => setOpen(open === i ? null : i)} style={faqS.item}>
+          <View style={faqS.itemHeader}>
+            <Text variant="labelMedium" style={faqS.q}>{item.q}</Text>
+            <Ionicons name={open === i ? 'chevron-up' : 'chevron-down'} size={16} color="#888" />
+          </View>
+          {open === i && <Text variant="bodySmall" style={faqS.a}>{item.a}</Text>}
+        </TouchableOpacity>
+      ))}
+    </Surface>
+  );
+}
+const faqS = StyleSheet.create({
+  card: { borderRadius: RADIUS.lg, padding: SPACING.md, backgroundColor: '#fff', gap: SPACING.sm },
+  title: { fontWeight: '700', color: '#222', marginBottom: SPACING.sm },
+  item: { borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingVertical: SPACING.md },
+  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  q: { flex: 1, fontWeight: '600', color: '#333' },
+  a: { color: '#666', lineHeight: 20, marginTop: SPACING.xs },
+});
+
 export default function SupportScreen() {
   const insets = useSafeAreaInsets();
   return (
     <View style={[s.container,{paddingTop:insets.top}]}>
       <ScreenHeader title="Help & Support"/>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
       <View style={s.content}>
         <Text variant="titleMedium" style={s.title}>We're here to help</Text>
         <Text variant="bodyMedium" style={s.sub}>Reach us anytime via call, WhatsApp, or email.</Text>
@@ -26,13 +63,10 @@ export default function SupportScreen() {
             </Surface>
           </TouchableOpacity>
         ))}
-        <Surface style={s.faqCard} elevation={1}>
-          <Text variant="titleSmall" style={s.faqTitle}>Frequently Asked Questions</Text>
-          {[['How do I track my order?','Go to Orders tab and tap your order to see real-time tracking.'],['Can I change my address after ordering?','Address changes are allowed only if the order is still in Pending status.'],['How long does delivery take?','Same day in Kathmandu Core, next day in Kathmandu Outer, 3-5 days in major cities.'],['How do returns work?','You can request a return within 7 days of delivery from the order details page.']].map(([q,a])=>(
-            <View key={q} style={s.faqItem}><Text variant="labelMedium" style={s.faqQ}>{q}</Text><Text variant="bodySmall" style={s.faqA}>{a}</Text></View>
-          ))}
-        </Surface>
+        <FaqAccordion />
       </View>
+      </ScrollView>
+
     </View>
   );
 }

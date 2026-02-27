@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, StyleSheet, TouchableOpacity, FlatList,
   Dimensions, RefreshControl, ScrollView,
@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { useZoneStore } from '../../src/stores/zoneStore';
+import { useRecentlyViewedStore } from '../../src/stores/recentlyViewedStore';
 import { useProducts, useCategories } from '../../src/hooks/useProducts';
 import { ZONES } from '../../src/data/zones';
 import { BANNERS } from '../../src/data/seed';
@@ -64,15 +65,33 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showZonePicker, setShowZonePicker] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
+  const bannerScrollRef = useRef<any>(null);
+
+  // Auto-advance banners every 4 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBannerIdx(prev => {
+        const next = (prev + 1) % BANNERS.length;
+        bannerScrollRef.current?.scrollTo({ x: next * (W - SPACING.lg * 2), animated: true });
+        return next;
+      });
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const { data: categories, isLoading: loadingCats } = useCategories();
   const { data: fastProducts, isLoading: loadingFast } = useProducts({ zoneId, isFastDelivery: true, inStock: true });
   const { data: verifiedProducts, isLoading: loadingVerified } = useProducts({ zoneId, isAuthenticated: true, inStock: true });
   const { data: dealProducts, isLoading: loadingDeals } = useProducts({ sortBy: 'price_asc', inStock: true });
+  const { products: recentProducts } = useRecentlyViewedStore();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await qc.invalidateQueries();
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ['products'] }),
+      qc.invalidateQueries({ queryKey: ['categories'] }),
+      qc.invalidateQueries({ queryKey: ['banners'] }),
+    ]);
     setRefreshing(false);
   }, [qc]);
 
@@ -86,11 +105,13 @@ export default function HomeScreen() {
     | { type: 'categories' }
     | { type: 'fast' }
     | { type: 'verified' }
-    | { type: 'deals' };
+    | { type: 'deals' }
+    | { type: 'recent' };
 
   const sections: Section[] = [
     { type: 'banners' },
     { type: 'categories' },
+    ...(recentProducts.length > 0 ? [{ type: 'recent' as const }] : []),
     ...(zoneId === 'ktm_core' || zoneId === 'ktm_outer' ? [{ type: 'fast' as const }] : []),
     { type: 'verified' },
     { type: 'deals' },
@@ -102,6 +123,7 @@ export default function HomeScreen() {
         return (
           <>
             <ScrollView
+              ref={bannerScrollRef}
               horizontal pagingEnabled showsHorizontalScrollIndicator={false}
               style={{ marginTop: SPACING.sm }}
               onScroll={e => setBannerIdx(Math.round(e.nativeEvent.contentOffset.x / (W - SPACING.lg * 2)))}
@@ -158,6 +180,14 @@ export default function HomeScreen() {
                   })
               }
             </ScrollView>
+          </>
+        );
+
+      case 'recent':
+        return (
+          <>
+            <SectionHeader title="🕐 Recently Viewed" />
+            <HorizontalProducts data={recentProducts.slice(0, 8)} zoneId={zoneId} isLoading={false} />
           </>
         );
 

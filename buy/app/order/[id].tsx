@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Text, Button, Surface, Divider, ActivityIndicator } from 'react-native-paper';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useQueryClient } from '@tanstack/react-query';
 import { useOrder, useCancelOrder, useUpdateOrderStatus } from '../../src/hooks/useOrders';
 import { formatDate, formatDateTime, formatNPR } from '../../src/utils/helpers';
 import { OrderStatus } from '../../src/types';
@@ -43,7 +44,11 @@ export default function OrderDetailScreen() {
   return (
     <View style={[s.container,{paddingTop:insets.top}]}>
       <ScreenHeader title={"Order #"+order.id.slice(-8).toUpperCase()}/>
-      <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={s.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => { queryClient.invalidateQueries({ queryKey: ['order', userId, orderId] }); }} colors={[theme.colors.primary]} />}
+      >
         <Surface style={s.statusCard} elevation={2}>
           <View style={s.statusTop}><Ionicons name={SI[order.status] as any} size={36} color={theme.colors.primary}/><View><Text variant="headlineSmall" style={s.statusTitle}>{SL[order.status]}</Text><Text variant="bodySmall" style={{color:'#888'}}>{order.status==='delivered'?'Delivered '+formatDate(order.timeline.find(t=>t.status==='delivered')?.timestamp??order.expectedDelivery):'Expected: '+formatDate(order.expectedDelivery)}</Text></View></View>
           <View style={s.timeline}>
@@ -91,7 +96,15 @@ export default function OrderDetailScreen() {
         <View style={s.actions}>
           {canCancel&&<Button mode="outlined" onPress={()=>Alert.alert('Cancel Order','Are you sure?',[{text:'No'},{text:'Yes',style:'destructive',onPress:()=>cancelOrder({userId:user!.id,orderId:order.id})}])} loading={cancelling} textColor={theme.colors.error}>Cancel Order</Button>}
           {canReturn&&<Button mode="outlined" onPress={()=>router.push('/order/return/'+order.id)} icon="return-up-back">Request Return</Button>}
-          {order.canReview&&<Button mode="contained" onPress={()=>router.push({pathname:'/order/review',params:{orderId:order.id}})} icon="star">Write a Review</Button>}
+          {order.canReview && (
+          <Button
+            mode="contained"
+            onPress={() => router.push({ pathname: '/order/review', params: { orderId: order.id } })}
+            icon="star"
+          >
+            Write Reviews ({order.items.length} product{order.items.length > 1 ? 's' : ''})
+          </Button>
+        )}
         </View>
         <View style={{height:SPACING.xl}}/>
       </ScrollView>

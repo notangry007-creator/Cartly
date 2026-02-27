@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
 import { Text, Surface, Divider, Button, Avatar } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -62,6 +62,8 @@ export default function ProfileScreen() {
           <MI icon="receipt-outline" label="My Orders" onPress={()=>router.push('/(tabs)/orders')}/>
           <Divider/>
           <MI icon="heart-outline" label="Wishlist" onPress={()=>router.push('/wishlist')} badge={wishlistIds.length}/>
+          <Divider/>
+          <MI icon="pricetag-outline" label="Offers & Coupons" onPress={()=>router.push('/offers')}/>
           <Divider/>
           <MI icon="refresh-outline" label="Returns & Refunds" onPress={()=>router.push('/returns')}/>
           <Divider/>

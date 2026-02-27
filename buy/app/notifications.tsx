@@ -17,7 +17,7 @@ const COLORS: Record<string, string> = { order:'#1565C0', wallet:'#2E7D32', retu
 
 const NOTIF_ROUTES: Record<string, (id?: string) => string> = {
   order: (id) => id ? `/order/${id}` : '/(tabs)/orders',
-  return: (id) => id ? `/order/${id}` : '/returns',
+  return: (id) => id ? `/order/return/${id}` : '/returns',
   wallet: () => '/wallet',
   promo: () => '/(tabs)/home',
   system: () => '/(tabs)/home',
@@ -28,11 +28,14 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { notifications, markRead, markAllRead, loadNotifications } = useNotificationStore();
-  const auth = useAuthGuard();
+  const [refreshing, setRefreshing] = useState(false);
 
-  async function onRefresh() {
+  async function handleRefresh() {
+    setRefreshing(true);
     if (user) await loadNotifications(user.id);
+    setRefreshing(false);
   }
+  const auth = useAuthGuard();
 
   if (!auth) return null;
 
@@ -53,7 +56,7 @@ export default function NotificationsScreen() {
         data={notifications}
         keyExtractor={i => i.id}
         contentContainerStyle={s.list}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} colors={[theme.colors.primary]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[theme.colors.primary]} />}
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="notifications-outline" size={64} color="#ccc" />
