@@ -35,8 +35,8 @@ export default function CheckoutScreen() {
   const zone = getZone(zoneId);
   const [step, setStep] = useState(0);
   const [selAddrId, setSelAddrId] = useState('');
-  const [dOpt, setDOpt] = useState<DeliveryOption>((zone.deliveryOptions[0] ?? 'standard') as DeliveryOption);
-  const [payMethod, setPayMethod] = useState<PaymentMethod>('cod');
+  const [dOpt, setDOpt] = useState<DeliveryOption>((zone.deliveryOptions[0] as DeliveryOption) ?? 'standard');
+  const [payMethod, setPayMethod] = useState<PaymentMethod>(zone.codAvailable ? 'cod' : 'wallet');
   const appliedCoupon = pCoupon ? COUPONS.find(c=>c.code===pCoupon) : null;
   const resolved = items.map(item=>{const p=PRODUCTS.find(x=>x.id===item.productId);const v=p?.variants.find(x=>x.id===item.variantId);return{item,p,v};}).filter(r=>r.p&&r.v);
   const subtotal = resolved.reduce((s,{item,v})=>s+(v?.price??0)*item.quantity,0);
@@ -47,7 +47,7 @@ export default function CheckoutScreen() {
   if(appliedCoupon) discount=appliedCoupon.type==='percent'?Math.min(Math.round(subtotal*appliedCoupon.value/100),appliedCoupon.maxDiscount??Infinity):appliedCoupon.value;
   const total = subtotal+shippingFee+codFee-discount;
   const selAddr = addresses.find(a=>a.id===selAddrId)??addresses.find(a=>a.isDefault);
-  if(!user||!items.length){router.replace('/(tabs)/cart');return null;}
+  if(!user||!items.length){router.replace('/(tabs)/cart' as any);return null;}
   function canProceed(){
     if(step===0) return !!selAddr;
     if(step===1) return !!dOpt;
@@ -55,13 +55,14 @@ export default function CheckoutScreen() {
     return true;
   }
   async function placeOrder(){
-    if(!selAddr) return;
+    if(!selAddr||!user) return;
+    const u = user;
     try {
       const orderItems: OrderItem[] = resolved.map(({item,p,v})=>({productId:item.productId,variantId:item.variantId,title:p!.title,variantLabel:v!.label,imageUrl:p!.images[0],quantity:item.quantity,price:v!.price,mrp:v!.mrp}));
-      const order = await createOrder({userId:user.id,items:orderItems,addressId:selAddr.id,addressSnapshot:selAddr,zoneId,deliveryOption:dOpt,paymentMethod:payMethod,subtotal,shippingFee,codFee,discount,couponCode:appliedCoupon?.code,total,status:'pending'});
-      if(payMethod==='wallet'){await debitWallet(total);await addTx({userId:user.id,type:'debit',amount:total,description:'Order '+order.id,referenceId:order.id,balance:user.walletBalance-total});}
-      await clearCart(user.id);
-      await addNotification(user.id,{title:'Order Placed!',body:'Order #'+order.id.slice(-8).toUpperCase()+' placed. Total: '+formatNPR(total),type:'order',referenceId:order.id});
+      const order = await createOrder({userId:u.id,items:orderItems,addressId:selAddr.id,addressSnapshot:selAddr,zoneId,deliveryOption:dOpt,paymentMethod:payMethod,subtotal,shippingFee,codFee,discount,couponCode:appliedCoupon?.code,total,status:'pending'});
+      if(payMethod==='wallet'){await debitWallet(total);await addTx({userId:u.id,type:'debit',amount:total,description:'Order '+order.id,referenceId:order.id,balance:u.walletBalance-total});}
+      await clearCart(u.id);
+      await addNotification(u.id,{title:'Order Placed!',body:'Order #'+order.id.slice(-8).toUpperCase()+' placed. Total: '+formatNPR(total),type:'order',referenceId:order.id});
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace({
         pathname: '/order/confirmation',
@@ -69,9 +70,9 @@ export default function CheckoutScreen() {
           orderId: order.id,
           total: String(total),
           expectedDelivery: order.expectedDelivery,
-          paymentMethod,
+          paymentMethod: payMethod,
         },
-      });
+      } as any);
     } catch(e){showError('Failed to place order. Please try again.');}
   }
   const dOpts = zone.deliveryOptions;
@@ -124,7 +125,7 @@ export default function CheckoutScreen() {
           <Text variant="titleMedium" style={s.stepTitle}>Payment Method</Text>
           {zone.codAvailable&&<TouchableOpacity onPress={()=>setPayMethod('cod')} activeOpacity={0.8}><Surface style={[s.optCard,payMethod==='cod'&&s.optCardA]} elevation={1}><RadioButton.Android value="cod" status={payMethod==='cod'?'checked':'unchecked'} onPress={()=>setPayMethod('cod')} color={theme.colors.primary}/><View style={s.optInfo}><View style={{flexDirection:'row',alignItems:'center',gap:SPACING.xs}}><Ionicons name="cash-outline" size={20} color="#2E7D32"/><Text variant="titleSmall" style={s.optLabel}>Cash on Delivery</Text></View><Text variant="bodySmall" style={s.optEta}>Pay when order arrives{zone.codFee>0?' (+NPR '+zone.codFee+' fee)':''}</Text></View></Surface></TouchableOpacity>}
           {!zone.codAvailable&&<Surface style={[s.optCard,{backgroundColor:'#f8f8f8'}]} elevation={0}><View style={s.optInfo}><Text variant="titleSmall" style={{color:'#bbb'}}>Cash on Delivery</Text><Text variant="bodySmall" style={{color:'#ccc'}}>Not available in your zone</Text></View></Surface>}
-          <TouchableOpacity onPress={()=>setPayMethod('wallet')} activeOpacity={0.8}><Surface style={[s.optCard,payMethod==='wallet'&&s.optCardA]} elevation={1}><RadioButton.Android value="wallet" status={payMethod==='wallet'?'checked':'unchecked'} onPress={()=>setPayMethod('wallet')} color={theme.colors.primary}/><View style={s.optInfo}><View style={{flexDirection:'row',alignItems:'center',gap:SPACING.xs}}><Ionicons name="wallet-outline" size={20} color={theme.colors.primary}/><Text variant="titleSmall" style={s.optLabel}>Buy Wallet</Text></View><Text variant="bodySmall" style={s.optEta}>Balance: {formatNPR(user.walletBalance)}{user.walletBalance<total?' · Insufficient':''}</Text></View></Surface></TouchableOpacity>
+          <TouchableOpacity onPress={()=>setPayMethod('wallet')} activeOpacity={0.8}><Surface style={[s.optCard,payMethod==='wallet'&&s.optCardA]} elevation={1}><RadioButton.Android value="wallet" status={payMethod==='wallet'?'checked':'unchecked'} onPress={()=>setPayMethod('wallet')} color={theme.colors.primary}/><View style={s.optInfo}><View style={{flexDirection:'row',alignItems:'center',gap:SPACING.xs}}><Ionicons name="wallet-outline" size={20} color={theme.colors.primary}/><Text variant="titleSmall" style={s.optLabel}>Buy Wallet</Text></View>          <Text variant="bodySmall" style={s.optEta}>Balance: {formatNPR(user?.walletBalance??0)}{(user?.walletBalance??0)<total?' · Insufficient':''}</Text></View></Surface></TouchableOpacity>
         </View>}
         {step===3&&<View style={s.stepContent}>
           <Text variant="titleMedium" style={s.stepTitle}>Review Order</Text>
@@ -132,7 +133,7 @@ export default function CheckoutScreen() {
           <Surface style={s.revSec} elevation={1}><Text variant="titleSmall" style={{fontWeight:'700',color:'#222',marginBottom:SPACING.sm}}>Items ({resolved.length})</Text>{resolved.map(({item,p,v})=><View key={item.productId+item.variantId} style={{paddingVertical:3}}><Text variant="bodySmall" style={{color:'#333',fontWeight:'500'}} numberOfLines={1}>{p?.title}</Text><Text variant="bodySmall" style={{color:'#888'}}>{v?.label} x{item.quantity} = {formatNPR((v?.price??0)*item.quantity)}</Text></View>)}</Surface>
           <Surface style={s.revSec} elevation={1}>
             <Text variant="titleSmall" style={{fontWeight:'700',color:'#222',marginBottom:SPACING.sm}}>Price</Text>
-            {[['Subtotal',formatNPR(subtotal)],['Shipping',formatNPR(shippingFee)],codFee>0?['COD Fee',formatNPR(codFee)]:null,discount>0?['Discount','- '+formatNPR(discount)]:null].filter(Boolean).map(([l,v])=><View key={l!} style={{flexDirection:'row',justifyContent:'space-between',marginBottom:4}}><Text variant="bodySmall" style={{color:'#555'}}>{l}</Text><Text variant="bodySmall" style={{color:l==='Discount'?'#2E7D32':'#333'}}>{v}</Text></View>)}
+            {([['Subtotal',formatNPR(subtotal)],['Shipping',formatNPR(shippingFee)],codFee>0?['COD Fee',formatNPR(codFee)]:null,discount>0?['Discount','- '+formatNPR(discount)]:null].filter(Boolean) as string[][]).map(([l,v])=><View key={l} style={{flexDirection:'row',justifyContent:'space-between',marginBottom:4}}><Text variant="bodySmall" style={{color:'#555'}}>{l}</Text><Text variant="bodySmall" style={{color:l==='Discount'?'#2E7D32':'#333'}}>{v}</Text></View>)}
             <Divider style={{marginVertical:SPACING.sm}}/>
             <View style={{flexDirection:'row',justifyContent:'space-between'}}><Text variant="titleSmall" style={{fontWeight:'700'}}>Total</Text><Text variant="titleSmall" style={{fontWeight:'700',color:theme.colors.primary}}>{formatNPR(total)}</Text></View>
             <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:4}}><Text variant="bodySmall" style={{color:'#555'}}>Payment</Text><Text variant="bodySmall" style={{color:'#333'}}>{payMethod==='cod'?'Cash on Delivery':'Buy Wallet'}</Text></View>

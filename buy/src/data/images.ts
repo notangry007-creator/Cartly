@@ -89,14 +89,17 @@ export const IMG = {
 } as const;
 
 // Helper: get product images as URI array (for backward compat)
+type ProductImgEntry = { uri: string; blurhash: string };
+const productImages = IMG.products as unknown as Record<string, ProductImgEntry[]>;
+
 export function getProductImages(productId: string): string[] {
-  const imgs = (IMG.products as Record<string, {uri:string;blurhash:string}[]>)[productId];
+  const imgs = productImages[productId];
   return imgs ? imgs.map(i => i.uri) : [];
 }
 
 // Helper: get product blurhashes
 export function getProductBlurhashes(productId: string): string[] {
-  const imgs = (IMG.products as Record<string, {uri:string;blurhash:string}[]>)[productId];
+  const imgs = productImages[productId];
   return imgs ? imgs.map(i => i.blurhash) : [];
 }
 

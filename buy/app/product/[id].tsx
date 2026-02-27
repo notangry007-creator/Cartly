@@ -25,7 +25,7 @@ import {
   getAvailableDeliveryOptions, getDeliveryFee, getETA, timeAgo,
 } from '../../src/utils/helpers';
 import { theme, SPACING, RADIUS } from '../../src/theme';
-import { IMG } from '../../src/data/images';
+import { IMG, getProductImages, getProductBlurhashes } from '../../src/data/images';
 
 const { width: W } = Dimensions.get('window');
 
@@ -114,21 +114,22 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const variant = selectedVariant ?? product.variants[0];
+  const p = product; // non-null alias after guard
+  const variant = selectedVariant ?? p.variants[0];
   const discount = getDiscountPercent(variant?.price ?? 0, variant?.mrp ?? 0);
-  const codAvail = product.codAvailableZones.includes(zoneId);
-  const dOpts = getAvailableDeliveryOptions(product, zoneId);
-  const wishlisted = isWishlisted(product.id);
-  const inStock = product.inStock && (variant?.stock ?? 0) > 0;
+  const codAvail = p.codAvailableZones.includes(zoneId);
+  const dOpts = getAvailableDeliveryOptions(p, zoneId);
+  const wishlisted = isWishlisted(p.id);
+  const inStock = p.inStock && (variant?.stock ?? 0) > 0;
 
   async function handleAddToCart() {
     if (!user) { router.push('/(auth)/login'); return; }
     if (!inStock) return;
     setAdding(true);
     try {
-      await addItem(user.id, product.id, curVariantId, qty);
+      await addItem(user.id, p.id, curVariantId, qty);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showSuccess(`"${product.title.slice(0, 25)}..." added to cart`);
+      showSuccess(`"${p.title.slice(0, 25)}..." added to cart`);
     } catch {
       showError('Failed to add to cart');
     } finally {
@@ -138,14 +139,14 @@ export default function ProductDetailScreen() {
 
   async function handleBuyNow() {
     if (!user) { router.push('/(auth)/login'); return; }
-    await addItem(user.id, product.id, curVariantId, qty);
+    await addItem(user.id, p.id, curVariantId, qty);
     router.push('/checkout');
   }
 
   function handleWishlist() {
     if (!user) { router.push('/(auth)/login'); return; }
     heartScale.value = withSequence(withSpring(1.4, { damping: 4 }), withSpring(1));
-    toggleWishlist(user.id, product.id);
+    toggleWishlist(user.id, p.id);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
@@ -201,8 +202,8 @@ export default function ProductDetailScreen() {
             scrollEventThrottle={16}
           >
             {product.images.map((img, i) => {
-              const imgs = (IMG.products as Record<string, {uri:string;blurhash:string}[]>)[product.id];
-              const imgData = imgs?.[i];
+              const productImgs = (IMG.products as unknown as Record<string, {uri:string;blurhash:string}[]>)[product.id];
+              const imgData = productImgs?.[i];
               return (
                 <TouchableOpacity key={i} onPress={() => openGallery(i)} activeOpacity={0.95}>
                   <Image
@@ -471,8 +472,8 @@ export default function ProductDetailScreen() {
             getItemLayout={(_, i) => ({ length: W, offset: W * i, index: i })}
             showsHorizontalScrollIndicator={false}
             renderItem={({ item, index }) => {
-              const imgs = (IMG.products as Record<string, {uri:string;blurhash:string}[]>)[product.id];
-              const imgData = imgs?.[index];
+              const galleryImgs = (IMG.products as unknown as Record<string, {uri:string;blurhash:string}[]>)[product.id];
+              const imgData = galleryImgs?.[index];
               return (
                 <View style={{ width: W, justifyContent: 'center' }}>
                   <Image

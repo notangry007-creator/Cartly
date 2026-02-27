@@ -19,8 +19,8 @@ export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const [filter, setFilter] = useState<Filter>('all');
-  const isFirstLoad = isLoading && orders.length === 0;
   const { data: orders=[], isLoading, refetch } = useOrders(user?.id??'');
+  const isFirstLoad = isLoading && orders.length === 0;
   if (!user) return (
     <View style={[s.container,{paddingTop:insets.top}]}>
       <View style={s.header}><Text variant="headlineSmall" style={s.headerTitle}>Orders</Text></View>

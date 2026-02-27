@@ -81,7 +81,7 @@ export default function ProfileScreen() {
           <View style={ms.item}>
             <View style={[ms.ic]}><Ionicons name={isDark ? 'moon' : 'sunny'} size={20} color={theme.colors.primary}/></View>
             <View style={ms.lw}><Text variant="bodyMedium" style={ms.label}>Dark Mode</Text></View>
-            <Switch value={isDark} onValueChange={toggleTheme} color={theme.colors.primary}/>
+            <Switch value={isDark} onValueChange={toggleTheme} thumbColor={isDark ? theme.colors.primary : '#f4f3f4'} trackColor={{ false: '#767577', true: theme.colors.primaryContainer }}/>
           </View>
         </Surface>
         <Surface style={s.menuSec} elevation={1}>

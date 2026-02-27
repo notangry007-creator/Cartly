@@ -187,7 +187,7 @@ function EmptyCartScreen() {
   const insets = useSafeAreaInsets();
   const { zoneId } = useZoneStore();
   const { products: recentlyViewed } = useRecentlyViewedStore();
-  const { items: wishlistItems } = useWishlistStore();
+  const { productIds: wishlistItems } = useWishlistStore();
   const suggestions = recentlyViewed.length > 0
     ? recentlyViewed.slice(0, 6)
     : PRODUCTS.filter(p => wishlistItems.includes(p.id)).slice(0, 6);

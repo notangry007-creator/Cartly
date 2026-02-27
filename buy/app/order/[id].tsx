@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrder, useCancelOrder, useUpdateOrderStatus } from '../../src/hooks/useOrders';
+import { useCallback } from 'react';
 import { useCartStore } from '../../src/stores/cartStore';
 import { formatDate, formatDateTime, formatNPR } from '../../src/utils/helpers';
 import { OrderStatus } from '../../src/types';
@@ -37,6 +38,7 @@ export default function OrderDetailScreen() {
   const { mutateAsync: cancelOrder, isPending: cancelling } = useCancelOrder();
   const { mutateAsync: updateStatus } = useUpdateOrderStatus();
   const { addItem } = useCartStore();
+  const queryClient = useQueryClient();
   if (isLoading) return <View style={[s.container,{paddingTop:insets.top,justifyContent:'center',alignItems:'center'}]}><ActivityIndicator size="large" color={theme.colors.primary}/></View>;
   if (!order) return <View style={[s.container,{paddingTop:insets.top}]}><ScreenHeader title="Order"/><View style={{flex:1,justifyContent:'center',alignItems:'center'}}><Text>Order not found</Text></View></View>;
   const canCancel = ['pending','confirmed'].includes(order.status);
@@ -45,8 +47,9 @@ export default function OrderDetailScreen() {
   const canSim = !['delivered','cancelled','refunded'].includes(order.status);
 
   async function handleBuyAgain() {
-    if (!user) return;
-    for (const item of order.items) {
+    if (!user || !order) return;
+    const o = order;
+    for (const item of o.items) {
       await addItem(user.id, item.productId, item.variantId, item.quantity);
     }
     router.push('/(tabs)/cart');
@@ -58,7 +61,7 @@ export default function OrderDetailScreen() {
       <ScrollView
         style={s.scroll}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => { queryClient.invalidateQueries({ queryKey: ['order', userId, orderId] }); }} colors={[theme.colors.primary]} />}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => { queryClient.invalidateQueries({ queryKey: ['order', user?.id, order?.id] }); }} colors={[theme.colors.primary]} />}
       >
         <Surface style={s.statusCard} elevation={2}>
           <View style={s.statusTop}><Ionicons name={SI[order.status] as any} size={36} color={theme.colors.primary}/><View><Text variant="headlineSmall" style={s.statusTitle}>{SL[order.status]}</Text><Text variant="bodySmall" style={{color:'#888'}}>{order.status==='delivered'?'Delivered '+formatDate(order.timeline.find(t=>t.status==='delivered')?.timestamp??order.expectedDelivery):'Expected: '+formatDate(order.expectedDelivery)}</Text></View></View>
